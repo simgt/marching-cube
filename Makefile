@@ -5,7 +5,7 @@ CFLAGS = -W -Wall -O0 \
 LDFLAGS = -lglfw \
 		$(addprefix -framework , Horde3D Horde3DUtils OpenGL Cocoa)
 
-BIN = fieldcraft
+BIN = build/fieldcraft
 SRC = main.cc
 
 ## compile ##
