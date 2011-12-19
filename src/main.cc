@@ -37,7 +37,7 @@ int main() {
 	// Add model resource
 	H3DRes modelRes = h3dAddResource(H3DResTypes::SceneGraph, "models/sphere/sphere.scene.xml", 0);
 	// Load added resources
-	h3dutLoadResourcesFromDisk("");
+	h3dutLoadResourcesFromDisk("."); // important!
 
 	// Add model to scene
 	model = h3dAddNodes(H3DRootNode, modelRes);
