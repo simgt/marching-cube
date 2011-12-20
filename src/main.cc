@@ -9,10 +9,8 @@
 #define WIN_W 800
 #define WIN_H 600
 
-#define CAMERA_X_SPEED 10.0f
-#define CAMERA_Z_SPEED 10.0f
-#define CAMERA_RX_SPEED 0.1f // angular speed (degrees)
-#define CAMERA_RY_SPEED 0.1f
+#define CAMERA_T_SPEED 10.0f
+#define CAMERA_R_SPEED 0.1f // angular speed (degrees)
 
 H3DNode model = 0;
 
@@ -31,8 +29,8 @@ struct {
 // events
 
 void mouse_position_listener(int mx, int my) {
-	camera.rx = - CAMERA_RX_SPEED * my; // rotation autour de l'axe x (donc verticale)
-	camera.ry = - fmod(CAMERA_RY_SPEED * mx, 360); // rotation autour de l'axe y (donc horizontale)
+	camera.rx = - CAMERA_R_SPEED * my; // rotation autour de l'axe x (donc verticale)
+	camera.ry = - fmod(CAMERA_R_SPEED * mx, 360); // rotation autour de l'axe y (donc horizontale)
 }
 
 // main
@@ -98,23 +96,25 @@ int main() {
 		}
 
 		if (glfwGetKey('W')) {
-			camera.x -= sinf(radian(camera.ry)) * CAMERA_X_SPEED * t;
-			camera.z -= cosf(radian(camera.ry)) * CAMERA_Z_SPEED * t;
+			camera.x -= sinf(radian(camera.ry)) * cosf(-radian(camera.rx)) * CAMERA_T_SPEED * t;
+			camera.y -= sinf(-radian(camera.rx)) * CAMERA_T_SPEED * t;
+			camera.z -= cosf(radian(camera.ry)) * cosf(-radian(camera.rx)) * CAMERA_T_SPEED * t;
 		}
 		if (glfwGetKey('S')) {
-			camera.x += sinf(radian(camera.ry)) * CAMERA_X_SPEED * t;
-			camera.z += cosf(radian(camera.ry)) * CAMERA_Z_SPEED * t;
+			camera.x += sinf(radian(camera.ry)) * cosf(-radian(camera.rx)) * CAMERA_T_SPEED * t;
+			camera.y += sinf(-radian(camera.rx)) * CAMERA_T_SPEED * t;
+			camera.z += cosf(radian(camera.ry)) * cosf(-radian(camera.rx)) * CAMERA_T_SPEED * t;
 		}
 		if (glfwGetKey('A')) {
-			camera.x -= sinf(radian(camera.ry - 90)) * CAMERA_X_SPEED * t;
-			camera.z -= cosf(radian(camera.ry - 90)) * CAMERA_Z_SPEED * t;
+			camera.x -= sinf(radian(camera.ry + 90)) * CAMERA_T_SPEED * t;
+			camera.z -= cosf(radian(camera.ry + 90)) * CAMERA_T_SPEED * t;
 		}
 		if (glfwGetKey('D')) {
-			camera.x += sinf(radian(camera.ry + 90)) * CAMERA_X_SPEED * t;
-			camera.z += cosf(radian(camera.ry + 90)) * CAMERA_Z_SPEED * t;
+			camera.x += sinf(radian(camera.ry + 90)) * CAMERA_T_SPEED * t;
+			camera.z += cosf(radian(camera.ry + 90)) * CAMERA_T_SPEED * t;
 		}
 		
-		h3dSetNodeTransform(camera.node, camera.x, 0, camera.z, camera.rx, camera.ry, 0, 1, 1, 1);
+		h3dSetNodeTransform(camera.node, camera.x, camera.y, camera.z, camera.rx, camera.ry, 0, 1, 1, 1);
 
 	    // Set new model position
 	    /*h3dSetNodeTransform(model, t * 10, 0, 0,  // Translation
