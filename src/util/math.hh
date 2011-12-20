@@ -9,55 +9,44 @@
 #endif
 
 /*
- * 3 vector represented by a 4 vector (for 128 bits alignment)
+ * 3 vec
  */
 
-struct vec {
-	float x, y, z, w;
+template <typename T>
+struct vec3 {
+	T x, y, z;
 
-	vec ();
-	vec (float x, float y, float z);
-	float& operator[] (int i);
-	const float& operator[] (int i) const;
-};
-
-/*
- * 4x4 float matrix
- * stored in column major (vecs = columns)
- */
-struct mat {
-	float m[16];
-
-	float& operator[] (int i);
-	const float& operator[] (int i) const;
-	float& operator() (int i, int j);
-	const float& operator() (int i, int j) const;
-	float* raw ();
+	vec3 ();
+	vec3 (T v);
+	vec3 (T x, T y, T z);
+	T& operator[] (int i);
+	const T& operator[] (int i) const;
 	
-	static mat identity ();
-	static mat rotation (float x, float y, float z, float t);
-	static mat rotation (const vec& x_axis, const vec& y_axis, const vec& z_axis);
-	static mat scale (float x, float y, float z);
-	static mat translation (float x, float y, float z);
-	static mat translation (const vec& v);
+	static float length (const vec3<T>& v);
+	static vec3<T> normalize (const vec3<T>& v);
+	static vec3<T> cross(const vec3<T>& u, const vec3<T>& v);
+
+	vec3<T> operator- () const;
+	vec3<T> operator+ (const vec3<T>&) const;
+	vec3<T> operator- (const vec3<T>&) const;
+	vec3<T> operator* (T) const;
+
+	vec3<T>& operator= (T);
+	vec3<T>& operator+= (const vec3<T>&);
+	vec3<T>& operator-= (const vec3<T>&);
 };
+
+template <typename T>
+std::ostream& operator<< (std::ostream& out, const vec3<T>& v);
+
+typedef vec3<float> vec3f;
+typedef vec3<int> vec3i;
+typedef vec3<bool> vec3b;
+
+// utils
 
 float radian (float t);
-vec cartesian (float theta, float phi, float r);
-
-float length (const vec& v);
-vec normalize (const vec& v);
-vec cross(const vec& u, const vec& v);
-
-vec operator- (const vec&);
-vec operator+ (const vec&, const vec&);
-vec operator- (const vec&, const vec&);
-vec operator* (const vec&, float);
-vec operator* (float, const vec&);
-mat operator* (const mat&, const mat&);
-
-std::ostream& operator<< (std::ostream& out, const vec& v);
-std::ostream& operator<< (std::ostream& out, const mat& m);
+vec3<float> cartesian (float theta, float phi, float r);
 
 #include "math.hxx"
 

@@ -21,16 +21,19 @@ double delay ();
 
 struct {
 	H3DNode node;
-	float x, y, z;
-	float rx, ry;
-} camera = { 0, 0, 0, 0, 0, 0 };
+	vec3f position;
+	vec3f orientation;
+} camera = {0, vec3f(0), vec3f(0)};
 
 
 // events
 
-void mouse_position_listener(int mx, int my) {
-	camera.rx = - CAMERA_R_SPEED * my; // rotation autour de l'axe x (donc verticale)
-	camera.ry = - fmod(CAMERA_R_SPEED * mx, 360); // rotation autour de l'axe y (donc horizontale)
+void keyboard_listener (int, int) {
+}
+
+void mouse_position_listener (int mx, int my) {
+	camera.orientation.x = - CAMERA_R_SPEED * my; // rotation autour de l'axe x (donc verticale)
+	camera.orientation.y = - fmod(CAMERA_R_SPEED * mx, 360); // rotation autour de l'axe y (donc horizontale)
 }
 
 // main
@@ -46,6 +49,7 @@ int main() {
 	
 	glfwDisable(GLFW_MOUSE_CURSOR);
 
+	glfwSetKeyCallback(keyboard_listener);
 	glfwSetMousePosCallback(mouse_position_listener);
 
 	// Initialize engine
@@ -91,30 +95,34 @@ int main() {
 	    double t = delay();
 
 		if (glfwGetKey('P')) {
-			std::cout << "cos(ry) = " << cosf(radian(camera.ry)) << std::endl;
-			std::cout << "sin(ry) = " << sinf(radian(camera.ry)) << std::endl;
+			std::cout << "cos(ry) = " << cosf(radian(camera.orientation.y)) << std::endl;
+			std::cout << "sin(ry) = " << sinf(radian(camera.orientation.y)) << std::endl;
 		}
 
-		if (glfwGetKey('W')) {
-			camera.x -= sinf(radian(camera.ry)) * cosf(-radian(camera.rx)) * CAMERA_T_SPEED * t;
-			camera.y -= sinf(-radian(camera.rx)) * CAMERA_T_SPEED * t;
-			camera.z -= cosf(radian(camera.ry)) * cosf(-radian(camera.rx)) * CAMERA_T_SPEED * t;
+
+		if (glfwGetKey('W')) { // forward
+			camera.position.x += -sinf(radian(camera.orientation.y)) * cosf(-radian(camera.orientation.x)) * CAMERA_T_SPEED * t;
+			camera.position.y += -sinf(-radian(camera.orientation.x)) * CAMERA_T_SPEED * t;
+			camera.position.z += -cosf(radian(camera.orientation.y)) * cosf(-radian(camera.orientation.x)) * CAMERA_T_SPEED * t;
 		}
-		if (glfwGetKey('S')) {
-			camera.x += sinf(radian(camera.ry)) * cosf(-radian(camera.rx)) * CAMERA_T_SPEED * t;
-			camera.y += sinf(-radian(camera.rx)) * CAMERA_T_SPEED * t;
-			camera.z += cosf(radian(camera.ry)) * cosf(-radian(camera.rx)) * CAMERA_T_SPEED * t;
+
+		if (glfwGetKey('S')) { // backward
+			camera.position.x += sinf(radian(camera.orientation.y)) * cosf(-radian(camera.orientation.x)) * CAMERA_T_SPEED * t;
+			camera.position.y += sinf(-radian(camera.orientation.x)) * CAMERA_T_SPEED * t;
+			camera.position.z += cosf(radian(camera.orientation.y)) * cosf(-radian(camera.orientation.x)) * CAMERA_T_SPEED * t;
 		}
-		if (glfwGetKey('A')) {
-			camera.x -= sinf(radian(camera.ry + 90)) * CAMERA_T_SPEED * t;
-			camera.z -= cosf(radian(camera.ry + 90)) * CAMERA_T_SPEED * t;
+
+		if (glfwGetKey('A')) { // left
+			camera.position.x += -sinf(radian(camera.orientation.y + 90)) * CAMERA_T_SPEED * t;
+			camera.position.z += -cosf(radian(camera.orientation.y + 90)) * CAMERA_T_SPEED * t;
 		}
-		if (glfwGetKey('D')) {
-			camera.x += sinf(radian(camera.ry + 90)) * CAMERA_T_SPEED * t;
-			camera.z += cosf(radian(camera.ry + 90)) * CAMERA_T_SPEED * t;
+
+		if (glfwGetKey('D')) { // right
+			camera.position.x += sinf(radian(camera.orientation.y + 90)) * CAMERA_T_SPEED * t;
+			camera.position.z += cosf(radian(camera.orientation.y + 90)) * CAMERA_T_SPEED * t;
 		}
 		
-		h3dSetNodeTransform(camera.node, camera.x, camera.y, camera.z, camera.rx, camera.ry, 0, 1, 1, 1);
+		h3dSetNodeTransform(camera.node, camera.position.x, camera.position.y, camera.position.z, camera.orientation.x, camera.orientation.y, 0, 1, 1, 1);
 
 	    // Set new model position
 	    /*h3dSetNodeTransform(model, t * 10, 0, 0,  // Translation
