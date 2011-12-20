@@ -2,32 +2,53 @@
 #include <Horde3D/Horde3D.h>
 #include <Horde3DUtils/Horde3DUtils.h>
 
-#include <cmath>
+#include <util/math.hh>
+#include <iostream>
+#include <string>
 
-#define WIN_W 640
-#define WIN_H 480
+#define WIN_W 800
+#define WIN_H 600
 
-H3DNode model = 0, cam = 0;
+#define CAMERA_X_SPEED 10.0f
+#define CAMERA_Z_SPEED 10.0f
+#define CAMERA_RX_SPEED 0.1f // angular speed (degrees)
+#define CAMERA_RY_SPEED 0.1f
 
-inline double delay () {
-	static double last = 0;
-	double current = glfwGetTime();
-	double ellapsed = current - last;
-	
-	last = current;
-	if (ellapsed < 0.01)
-		glfwSleep(0.01 - ellapsed);
-	
-	return (glfwGetKey('P')) ? 0 : ellapsed;
+H3DNode model = 0;
+
+// time
+double delay ();
+
+// camera
+
+struct {
+	H3DNode node;
+	float x, y, z;
+	float rx, ry;
+} camera = { 0, 0, 0, 0, 0, 0 };
+
+
+// events
+
+void mouse_position_listener(int mx, int my) {
+	camera.rx = - CAMERA_RX_SPEED * my; // rotation autour de l'axe x (donc verticale)
+	camera.ry = - fmod(CAMERA_RY_SPEED * mx, 360); // rotation autour de l'axe y (donc horizontale)
 }
 
+// main
+
 int main() {
+	// init
 	glfwInit();
 
 	if (!glfwOpenWindow(WIN_W, WIN_H, 8, 8, 8, 8, 24, 8, GLFW_WINDOW)) {
 		glfwTerminate();
 		return 1;
 	}
+	
+	glfwDisable(GLFW_MOUSE_CURSOR);
+
+	glfwSetMousePosCallback(mouse_position_listener);
 
 	// Initialize engine
 	h3dInit();
@@ -47,7 +68,7 @@ int main() {
 	// Add light source
 	H3DNode light = h3dAddLightNode(H3DRootNode, "Light1", 0, "LIGHTING", "SHADOWMAP");
 	h3dSetNodeTransform(light, 0, 10, 0, 0, 0, 0, 1, 1, 1);
-	h3dSetNodeParamF(light, H3DLight::RadiusF, 0, 30);
+	h3dSetNodeParamF(light, H3DLight::RadiusF, 0, 50);
 	h3dSetNodeParamF(light, H3DLight::FovF, 0, 90 );
 	h3dSetNodeParamI(light, H3DLight::ShadowMapCountI, 1 );
 	h3dSetNodeParamF(light, H3DLight::ShadowMapBiasF, 0, 0.01f );
@@ -57,27 +78,43 @@ int main() {
 	h3dSetNodeParamF(light, H3DLight::ColorMultiplierF, 0, 1.0f );
 
 	// Add camera
-	cam = h3dAddCameraNode(H3DRootNode, "Camera", pipeRes);
+	camera.node = h3dAddCameraNode(H3DRootNode, "Camera", pipeRes);
 	// Setup viewport and render target sizes
-	h3dSetNodeParamI(cam, H3DCamera::ViewportXI, 0);
-	h3dSetNodeParamI(cam, H3DCamera::ViewportYI, 0);
-	h3dSetNodeParamI(cam, H3DCamera::ViewportWidthI, WIN_W);
-	h3dSetNodeParamI(cam, H3DCamera::ViewportHeightI, WIN_H);
-	h3dSetupCameraView(cam, 45.0f, (float)WIN_W / WIN_H, 0.1f, 2048.0f);
+	h3dSetNodeParamI(camera.node, H3DCamera::ViewportXI, 0);
+	h3dSetNodeParamI(camera.node, H3DCamera::ViewportYI, 0);
+	h3dSetNodeParamI(camera.node, H3DCamera::ViewportWidthI, WIN_W);
+	h3dSetNodeParamI(camera.node, H3DCamera::ViewportHeightI, WIN_H);
+	h3dSetupCameraView(camera.node, 45.0f, (float)WIN_W / WIN_H, 0.1f, 2048.0f);
 
 	h3dResizePipelineBuffers(pipeRes, WIN_W, WIN_H);
 	
 	while (!glfwGetKey(GLFW_KEY_ESC) && glfwGetWindowParam(GLFW_OPENED)) {
 		// Increase animation time
 	    double t = delay();
-		float z;
 
-		if (glfwGetKey('W'))
-			z -= 10.0f * t;
-		if (glfwGetKey('S'))
-			z += 10.0f * t;
+		if (glfwGetKey('P')) {
+			std::cout << "cos(ry) = " << cosf(radian(camera.ry)) << std::endl;
+			std::cout << "sin(ry) = " << sinf(radian(camera.ry)) << std::endl;
+		}
+
+		if (glfwGetKey('W')) {
+			camera.x -= sinf(radian(camera.ry)) * CAMERA_X_SPEED * t;
+			camera.z -= cosf(radian(camera.ry)) * CAMERA_Z_SPEED * t;
+		}
+		if (glfwGetKey('S')) {
+			camera.x += sinf(radian(camera.ry)) * CAMERA_X_SPEED * t;
+			camera.z += cosf(radian(camera.ry)) * CAMERA_Z_SPEED * t;
+		}
+		if (glfwGetKey('A')) {
+			camera.x -= sinf(radian(camera.ry - 90)) * CAMERA_X_SPEED * t;
+			camera.z -= cosf(radian(camera.ry - 90)) * CAMERA_Z_SPEED * t;
+		}
+		if (glfwGetKey('D')) {
+			camera.x += sinf(radian(camera.ry + 90)) * CAMERA_X_SPEED * t;
+			camera.z += cosf(radian(camera.ry + 90)) * CAMERA_Z_SPEED * t;
+		}
 		
-		h3dSetNodeTransform(cam, 0, 0, z, 0, 0, 0, 1, 1, 1 );
+		h3dSetNodeTransform(camera.node, camera.x, 0, camera.z, camera.rx, camera.ry, 0, 1, 1, 1);
 
 	    // Set new model position
 	    /*h3dSetNodeTransform(model, t * 10, 0, 0,  // Translation
@@ -85,7 +122,7 @@ int main() {
 	                         1, 1, 1);            // Scale */
 
 	    // Render scene
-	    h3dRender(cam);
+	    h3dRender(camera.node);
 
 	    // Finish rendering of frame
 	    h3dFinalizeFrame();
@@ -97,4 +134,16 @@ int main() {
    
 	glfwCloseWindow();
 	glfwTerminate();
+}
+
+inline double delay () {
+	static double last = 0;
+	double current = glfwGetTime();
+	double ellapsed = current - last;
+	
+	last = current;
+	if (ellapsed < 0.01)
+		glfwSleep(0.01 - ellapsed);
+	
+	return (glfwGetKey('P')) ? 0 : ellapsed;
 }
