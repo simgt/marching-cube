@@ -15,8 +15,6 @@
 
 #define PICK_RAY_LENGTH 10.0f 
 
-H3DNode model = 0;
-
 // time
 double delay ();
 
@@ -42,14 +40,22 @@ void mouse_position_listener (int mx, int my) {
 void mouse_button_listener (int button, int status) {
 	if (button == GLFW_MOUSE_BUTTON_LEFT && status == GLFW_PRESS) {
 		vec3f p, d; // position and direction of the picking ray
+		
 		h3dutPickRay(camera.node, 0.5, 0.5, &p.x, &p.y, &p.z, &d.x, &d.y, &d.z); // get the picking ray of the center of the screen
-
-		d.length(PICK_RAY_LENGTH);
-
-		if (h3dCastRay(H3DRootNode, p.x, p.y, p.z, d.x, d.y, d.z, 1) > 0) {
+		d.length(PICK_RAY_LENGTH); // set ray length to maximum reachable by player
+		
+		if (h3dCastRay(H3DRootNode, p.x, p.y, p.z, d.x, d.y, d.z, 1) > 0) { // cast the ray, stop to the 1st collision
 			H3DNode node;
-			assert(h3dGetCastRayResult(0, &node, 0, (float*)&p));
+			assert(h3dGetCastRayResult(0, &node, 0, (float*)&p)); // recover node and intersection point
 			outlog(node);
+			
+			// OPTIM recuperer la matrice absolue du noeud, l'inverser, appliquer la transformation
+			const mat4f* mat;
+			h3dGetNodeTransMats(node, 0, (const float**)&mat); // both matrix representation are in column major mode (internal H3D and mat4f)
+			mat4f inv = mat4f::inverse(*mat);
+			outlog(inv);
+			outlog(p);
+			p = inv * p; // inverse the matrix and apply it to the position to recover the model-space position
 			outlog(p);
 		}
 	}
@@ -83,7 +89,7 @@ int main() {
 	h3dutLoadResourcesFromDisk("."); // important!
 
 	// Add model to scene
-	model = h3dAddNodes(H3DRootNode, modelRes);
+	H3DNode model = h3dAddNodes(H3DRootNode, modelRes);
 
 	h3dSetNodeTransform(model, 0, 0, 0, 0, 0, 0, 5, 5, 5);
 

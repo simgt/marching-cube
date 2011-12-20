@@ -8,48 +8,79 @@
 #define M_PI 3.141592653589793
 #endif
 
-/*
- * 3 vec
- */
+/* =========
+ *	 vec3f
+ * ========= */
 
-template <typename T>
-struct vec3 {
-	T x, y, z;
+struct vec3f{
+	float x, y, z;
 
-	vec3 ();
-	vec3 (T v);
-	vec3 (T x, T y, T z);
-	T& operator[] (int i);
-	const T& operator[] (int i) const;
+	vec3f();
+	vec3f(float v);
+	vec3f(float x, float y, float z);
+	float& operator[] (int i);
+	const float& operator[] (int i) const;
 	
-	float length () const; // should return a T ?
+	float length () const; // should return a float ?
 	void length (float);
 	void normalize ();
 
-	vec3<T> operator- () const;
-	vec3<T> operator+ (const vec3<T>&) const;
-	vec3<T> operator- (const vec3<T>&) const;
-	vec3<T> operator* (T) const;
+	vec3f operator- () const;
+	vec3f operator+ (const vec3f&) const;
+	vec3f operator- (const vec3f&) const;
+	vec3f operator* (float) const;
 
-	vec3<T>& operator= (T);
-	vec3<T>& operator+= (const vec3<T>&);
-	vec3<T>& operator-= (const vec3<T>&);
+	vec3f& operator= (float);
+	vec3f& operator+= (const vec3f&);
+	vec3f& operator-= (const vec3f&);
 };
 
-template <typename T>
-vec3<T> cross(const vec3<T>& u, const vec3<T>& v);
+vec3f cross(const vec3f& u, const vec3f& v);
 
-template <typename T>
-std::ostream& operator<< (std::ostream& out, const vec3<T>& v);
+std::ostream& operator<< (std::ostream& out, const vec3f& v);
 
-typedef vec3<float> vec3f;
-typedef vec3<int> vec3i;
-typedef vec3<bool> vec3b;
+/* =========
+ *	 mat4f
+ * =========
+ *
+ * 4x4 float matrix
+ * stored in column major (vecs = columns)
+ */
 
-// utils
+struct mat4f {
+	union {
+		float m[16];
+		float n[4][4]; // m[column][row]
+	};
+
+	float& operator[] (int i);
+	const float& operator[] (int i) const;
+	float& operator() (int i, int j);
+	const float& operator() (int i, int j) const;
+	float* raw ();
+	
+	static mat4f identity ();
+	static mat4f rotation (float x, float y, float z, float t);
+	static mat4f rotation (const vec3f& x_axis, const vec3f& y_axis, const vec3f& z_axis);
+	static mat4f scale (float x, float y, float z);
+	static mat4f translation (float x, float y, float z);
+	static mat4f translation (const vec3f& v);
+	static mat4f inverse (const mat4f& a);
+	
+	float determinant() const;
+	
+	mat4f operator* (const mat4f&) const;
+	vec3f operator* (const vec3f&) const;
+};
+
+std::ostream& operator<< (std::ostream& out, const mat4f& m);
+
+/* ===============
+ *	 conversions
+ * =============== */
 
 float radian (float t);
-vec3<float> cartesian (float theta, float phi, float r);
+vec3f cartesian (float theta, float phi, float r);
 
 #include "math.hxx"
 
