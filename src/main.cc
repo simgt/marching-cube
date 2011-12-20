@@ -1,9 +1,10 @@
-#include "glfw.h"
+#include <glfw.h>
 #include <Horde3D/Horde3D.h>
 #include <Horde3DUtils/Horde3DUtils.h>
 
+#include <global.hh>
+
 #include <util/math.hh>
-#include <iostream>
 #include <string>
 
 #define WIN_W 800
@@ -11,6 +12,8 @@
 
 #define CAMERA_T_SPEED 10.0f
 #define CAMERA_R_SPEED 0.1f // angular speed (degrees)
+
+#define PICK_RAY_LENGTH 10.0f 
 
 H3DNode model = 0;
 
@@ -38,9 +41,17 @@ void mouse_position_listener (int mx, int my) {
 
 void mouse_button_listener (int button, int status) {
 	if (button == GLFW_MOUSE_BUTTON_LEFT && status == GLFW_PRESS) {
-		// pick the node under the normalized mouse position
-		H3DNode node = h3dutPickNode(camera.node, 0.5, 0.5);
-		std::cout << node << std::endl;
+		vec3f p, d; // position and direction of the picking ray
+		h3dutPickRay(camera.node, 0.5, 0.5, &p.x, &p.y, &p.z, &d.x, &d.y, &d.z); // get the picking ray of the center of the screen
+
+		d.length(PICK_RAY_LENGTH);
+
+		if (h3dCastRay(H3DRootNode, p.x, p.y, p.z, d.x, d.y, d.z, 1) > 0) {
+			H3DNode node;
+			assert(h3dGetCastRayResult(0, &node, 0, (float*)&p));
+			outlog(node);
+			outlog(p);
+		}
 	}
 }
 
@@ -104,8 +115,7 @@ int main() {
 	    double t = delay();
 
 		if (glfwGetKey('P')) {
-			std::cout << "cos(ry) = " << cosf(radian(camera.orientation.y)) << std::endl;
-			std::cout << "sin(ry) = " << sinf(radian(camera.orientation.y)) << std::endl;
+			
 		}
 
 

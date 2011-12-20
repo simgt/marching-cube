@@ -22,9 +22,9 @@ struct vec3 {
 	T& operator[] (int i);
 	const T& operator[] (int i) const;
 	
-	static float length (const vec3<T>& v);
-	static vec3<T> normalize (const vec3<T>& v);
-	static vec3<T> cross(const vec3<T>& u, const vec3<T>& v);
+	float length () const; // should return a T ?
+	void length (float);
+	void normalize ();
 
 	vec3<T> operator- () const;
 	vec3<T> operator+ (const vec3<T>&) const;
@@ -35,6 +35,9 @@ struct vec3 {
 	vec3<T>& operator+= (const vec3<T>&);
 	vec3<T>& operator-= (const vec3<T>&);
 };
+
+template <typename T>
+vec3<T> cross(const vec3<T>& u, const vec3<T>& v);
 
 template <typename T>
 std::ostream& operator<< (std::ostream& out, const vec3<T>& v);
