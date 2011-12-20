@@ -1,0 +1,9 @@
+- remove cursor
+- free-fly camera
+- print object under mouse (center of the screen)
+- retrieve model-space intersection
+* show frame-rate and others informations on screen
+* modify the vertices in a defined radius around the intersection (color?)
+* generate a flat terrain on the fly
+
+* do the "OPTIM"s
