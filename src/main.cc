@@ -36,6 +36,14 @@ void mouse_position_listener (int mx, int my) {
 	camera.orientation.y = - fmod(CAMERA_R_SPEED * mx, 360); // rotation autour de l'axe y (donc horizontale)
 }
 
+void mouse_button_listener (int button, int status) {
+	if (button == GLFW_MOUSE_BUTTON_LEFT && status == GLFW_PRESS) {
+		// pick the node under the normalized mouse position
+		H3DNode node = h3dutPickNode(camera.node, 0.5, 0.5);
+		std::cout << node << std::endl;
+	}
+}
+
 // main
 
 int main() {
@@ -51,6 +59,7 @@ int main() {
 
 	glfwSetKeyCallback(keyboard_listener);
 	glfwSetMousePosCallback(mouse_position_listener);
+	glfwSetMouseButtonCallback(mouse_button_listener);
 
 	// Initialize engine
 	h3dInit();
