@@ -34,25 +34,21 @@ inline const T& vec3<T>::operator[] (int i) const {
 /* operations */
 
 template <typename T>
-inline float vec3<T>::length (const vec3<T>& v) {
-    return sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
+inline float vec3<T>::length () const {
+    return sqrtf(x * x + y * y + z * z);
 }
 
 template <typename T>
-inline vec3<T> vec3<T>::normalize (const vec3<T>& v) {
-	T rlen = 1.0 / length(v);
-	return v * rlen;
+inline void vec3<T>::length (float l) {
+	float ratio = l / length();
+	x *= ratio;
+	y *= ratio;
+	z *= ratio;
 }
 
 template <typename T>
-inline vec3<T> vec3<T>::cross(const vec3<T>& a, const vec3<T>& b) {
-	vec3<T> v;
-
-    v.x = a.y * b.z - a.z * b.y;
-    v.y = a.z * b.x - a.x * b.z;
-    v.z = a.x * b.y - a.y * b.x;
-
-	return v;
+inline void vec3<T>::normalize () {
+	length(1.0);
 }
 
 template <typename T>
@@ -97,6 +93,17 @@ inline vec3<T>& vec3<T>::operator-= (const vec3<T>& b) {
 	y -= b.y;
 	z -= b.z;
 	return *this;
+}
+
+template <typename T>
+inline vec3<T> cross(const vec3<T>& a, const vec3<T>& b) {
+	vec3<T> v;
+
+    v.x = a.y * b.z - a.z * b.y;
+    v.y = a.z * b.x - a.x * b.z;
+    v.z = a.x * b.y - a.y * b.x;
+
+	return v;
 }
 
 template <typename T>
