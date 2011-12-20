@@ -95,11 +95,7 @@ int main() {
 
 	// Add light source
 	H3DNode light = h3dAddLightNode(H3DRootNode, "Light1", 0, "LIGHTING", "SHADOWMAP");
-	h3dSetNodeTransform(light, 0, 10, 0, 0, 0, 0, 1, 1, 1);
-	h3dSetNodeParamF(light, H3DLight::RadiusF, 0, 50);
-	h3dSetNodeParamF(light, H3DLight::FovF, 0, 90 );
-	h3dSetNodeParamI(light, H3DLight::ShadowMapCountI, 1 );
-	h3dSetNodeParamF(light, H3DLight::ShadowMapBiasF, 0, 0.01f );
+	h3dSetNodeTransform(light, 0, 6, 10, -10, 0, 0, 1, 1, 1);
 	h3dSetNodeParamF(light, H3DLight::ColorF3, 0, 1.0f );
 	h3dSetNodeParamF(light, H3DLight::ColorF3, 1, 0.8f );
 	h3dSetNodeParamF(light, H3DLight::ColorF3, 2, 0.7f );
@@ -120,7 +116,7 @@ int main() {
 		// Increase animation time
 	    double t = delay();
 
-		h3dutShowText("test", 0.01, 0.01, 0.03f, 1, 1, 1, font_tex);
+		h3dutShowText("0.01a", 0.01, 0.01, 0.03f, 1, 1, 1, font_tex);
 
 		if (glfwGetKey('W')) { // forward
 			camera.position.x += -sinf(radian(camera.orientation.y)) * cosf(-radian(camera.orientation.x)) * CAMERA_T_SPEED * t;
