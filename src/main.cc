@@ -49,12 +49,10 @@ void mouse_button_listener (int button, int status) {
 			assert(h3dGetCastRayResult(0, &node, 0, (float*)&p)); // recover node and intersection point
 			outlog(node);
 			
-			// OPTIM recuperer la matrice absolue du noeud, l'inverser, appliquer la transformation
+			// OPTIM check if the intersection point is not available directly in model-space in H3D
 			const mat4f* mat;
 			h3dGetNodeTransMats(node, 0, (const float**)&mat); // both matrix representation are in column major mode (internal H3D and mat4f)
-			mat4f inv = mat4f::inverse(*mat);
-			outlog(inv);
-			outlog(p);
+			mat4f inv = mat4f::inverse(*mat); // world to model matrix
 			p = inv * p; // inverse the matrix and apply it to the position to recover the model-space position
 			outlog(p);
 		}
@@ -85,6 +83,8 @@ int main() {
 	H3DRes pipeRes = h3dAddResource(H3DResTypes::Pipeline, "pipelines/forward.pipeline.xml", 0);
 	// Add model resource
 	H3DRes modelRes = h3dAddResource(H3DResTypes::SceneGraph, "models/sphere/sphere.scene.xml", 0);
+	// Font texture
+	H3DRes font_tex = h3dAddResource(H3DResTypes::Material, "overlays/font.material.xml", 0);
 	// Load added resources
 	h3dutLoadResourcesFromDisk("."); // important!
 
@@ -120,10 +120,7 @@ int main() {
 		// Increase animation time
 	    double t = delay();
 
-		if (glfwGetKey('P')) {
-			
-		}
-
+		h3dutShowText("test", 0.01, 0.01, 0.03f, 1, 1, 1, font_tex);
 
 		if (glfwGetKey('W')) { // forward
 			camera.position.x += -sinf(radian(camera.orientation.y)) * cosf(-radian(camera.orientation.x)) * CAMERA_T_SPEED * t;
@@ -163,6 +160,7 @@ int main() {
 		glfwSwapBuffers();
 	}
 	
+	h3dutDumpMessages();
 	h3dRelease();
    
 	glfwCloseWindow();
