@@ -1,10 +1,6 @@
-#include <glfw.h>
-#include <Horde3D/Horde3D.h>
-#include <Horde3DUtils/Horde3DUtils.h>
-
 #include <global.hh>
-
 #include <util/math.hh>
+
 #include <string>
 
 #define WIN_W 800
@@ -82,16 +78,19 @@ int main() {
 	// Add pipeline resource
 	H3DRes pipeRes = h3dAddResource(H3DResTypes::Pipeline, "pipelines/forward.pipeline.xml", 0);
 	// Add model resource
-	H3DRes modelRes = h3dAddResource(H3DResTypes::SceneGraph, "models/sphere/sphere.scene.xml", 0);
+	H3DRes sphere_scene = h3dAddResource(H3DResTypes::SceneGraph, "models/sphere/sphere.scene.xml", 0);
 	// Font texture
 	H3DRes font_tex = h3dAddResource(H3DResTypes::Material, "overlays/font.material.xml", 0);
 	// Load added resources
 	h3dutLoadResourcesFromDisk("."); // important!
 
 	// Add model to scene
-	H3DNode model = h3dAddNodes(H3DRootNode, modelRes);
+	H3DNode terrain = h3dAddGroupNode(H3DRootNode, "terrain");
+	h3dSetNodeTransform(generate_chunk(terrain), -5, 0, -5, 0, 0, 0, 10, 10, 10);
+	
+	//H3DNode sphere = h3dAddNodes(terrain, sphere_scene);
+	//h3dSetNodeTransform(sphere, 0, 0, 0, 0, 0, 0, 5, 5, 5);
 
-	h3dSetNodeTransform(model, 0, 0, 0, 0, 0, 0, 5, 5, 5);
 
 	// Add light source
 	H3DNode light = h3dAddLightNode(H3DRootNode, "Light1", 0, "LIGHTING", "SHADOWMAP");

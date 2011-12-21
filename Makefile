@@ -7,7 +7,7 @@ LDFLAGS = -lglfw \
 		$(addprefix -framework , Horde3D Horde3DUtils OpenGL Cocoa)
 
 BIN = build/fieldcraft
-SRC = main.cc
+SRC = main.cc generator.cc
 
 ## compile ##
 
