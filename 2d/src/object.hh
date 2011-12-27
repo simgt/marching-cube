@@ -38,7 +38,7 @@ struct Program {
 		GLuint position;
 	} attributes;
 
-	Program (const char* vertex_file, const char* fragment_file);
+	void init (const char* vertex_file, const char* fragment_file);
 };
 
 #endif

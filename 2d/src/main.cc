@@ -5,7 +5,11 @@
 #include <glfw.h>
 #include <iostream>
 
+void resize (int width, int height);
 double delay ();
+
+mat4f p_matrix;
+Program program;
 
 int main (int, char**) {
     glfwInit();
@@ -13,32 +17,25 @@ int main (int, char**) {
 		glfwTerminate();
 		return 1;
 	}
+	
+	program.init("shd/vertex.glsl", "shd/fragment.glsl");
 
 	glfwEnable(GLFW_AUTO_POLL_EVENTS);
-	//glfwSetWindowSizeCallback(window_resize);
+	glfwSetWindowSizeCallback(resize);
     
 	glClearDepth(1.0f);
-	glClearColor(0, 0, 0, 0);
-
-	// reshape
-	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-	mat4f p_matrix = mat4f::translation(-1, -1, 0) * mat4f::scale(2.0 / WINDOW_WIDTH, 2.0 / WINDOW_HEIGHT, 1);
+	glClearColor(0.2, 0.2, 0.2, 0);
 	
 	// resources
-	Program program ("shd/vertex.glsl", "shd/fragment.glsl");
-	glUseProgram(program.handle);
-	glUniformMatrix4fv(program.uniforms.p_matrix, 1, GL_FALSE, p_matrix.raw());
 	
 	Mesh triangle (3, 6);
 	triangle.vertex_data[0] = vec3f(0, 0, 0);
 	triangle.vertex_data[1] = vec3f(200, 0, 0);
-	triangle.vertex_data[2] = vec3f(200, 200, 0);
+	triangle.vertex_data[2] = vec3f(100, 200, 0);
 	triangle.element_data[0] = 0; triangle.element_data[1] = 1;
 	triangle.element_data[2] = 1; triangle.element_data[3] = 2;
 	triangle.element_data[4] = 2; triangle.element_data[5] = 0;
 	triangle.init(program);
-	
-	std::cout << p_matrix << std::endl;
 	
 	// loop
 
@@ -57,6 +54,16 @@ int main (int, char**) {
 	glfwTerminate();
 
     return 0;
+}
+
+void resize (int width, int height) {
+	glViewport(0, 0, width, height); // update viewport
+	p_matrix = mat4f::translation(-1, -1, 0) * mat4f::scale(2.0 / width, 2.0 / height, 1) * mat4f::translation(1, 1, 0); // update projection matrix
+	
+	// upload projection matrix
+	glUseProgram(program.handle);
+	glUniformMatrix4fv(program.uniforms.p_matrix, 1, GL_FALSE, p_matrix.raw());
+	glUseProgram(0);
 }
 
 inline double delay () {

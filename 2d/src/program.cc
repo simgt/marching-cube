@@ -5,10 +5,10 @@
 GLuint load_shader (GLenum type, const char* filepath);
 GLuint load_program (const char* vertex_file, const char* fragment_file);
 
-Program::Program (const char* vertex_file, const char* fragment_file)
-	: handle (load_program(vertex_file, fragment_file)) {
-		uniforms.p_matrix = glGetUniformLocation(handle, "p_matrix");
-		attributes.position = glGetAttribLocation(handle, "position");
+void Program::init (const char* vertex_file, const char* fragment_file) {
+	handle = load_program(vertex_file, fragment_file);
+	uniforms.p_matrix = glGetUniformLocation(handle, "p_matrix");
+	attributes.position = glGetAttribLocation(handle, "position");
 }
 
 // util
