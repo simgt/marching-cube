@@ -18,9 +18,9 @@ int main (int, char**) {
 		return 1;
 	}
 	
-	program.init("shd/vertex.glsl", "shd/fragment.glsl");
+	program.init("shd/vertex.glsl", "shd/fragment.glsl"); // load & compile shaders program
 
-	glfwEnable(GLFW_AUTO_POLL_EVENTS);
+	glfwEnable(GLFW_AUTO_POLL_EVENTS); // poll when swapping buffers
 	glfwSetWindowSizeCallback(resize);
     
 	glClearDepth(1.0f);
