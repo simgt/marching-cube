@@ -3,7 +3,7 @@ CFLAGS = -W -Wall -O0 -std=c++0x
 LDFLAGS = -lglfw -framework Cocoa -framework OpenGL
 
 BIN = 2d
-SRC = main.cc util.cc
+SRC = main.cc mesh.cc program.cc
 
 ## compile ##
 
