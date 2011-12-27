@@ -1,11 +1,9 @@
 CC = clang++
-CFLAGS = -W -Wall -O0 -std=c++0x \
-		-Isrc \
-		$(shell sdl-config --cflags)
-LDFLAGS = $(shell sdl-config --libs)
+CFLAGS = -W -Wall -O0 -std=c++0x
+LDFLAGS = -lglfw -framework Cocoa -framework OpenGL
 
 BIN = 2d
-SRC = main.cc
+SRC = main.cc util.cc
 
 ## compile ##
 
