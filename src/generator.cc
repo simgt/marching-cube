@@ -37,10 +37,10 @@ H3DNode generate_chunk (H3DNode parent) {
 	};
 
 	float texture1coords[] = {
-	 0, 1,
-	 0.0625, 1,
-	 0, 1 - 0.0625,
-	 0.0625, 1 - 0.0625
+	 4 * 0.0625, 1 - 0 * 0.0625,
+	 5 * 0.0625, 1 - 0 * 0.0625,
+	 4 * 0.0625, 1 - 1 * 0.0625,
+	 5 * 0.0625, 1 - 1 * 0.0625
 	};
 
 	H3DRes geometry = h3dutCreateGeometryRes("geoRes", 4, 6, (float*)positions, indexes, normals, 0, 0, texture1coords, 0);

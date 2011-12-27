@@ -1,6 +1,13 @@
+UNAME = $(shell uname)
 CC = clang++
+
 CFLAGS = -W -Wall -O0 -std=c++0x
+
+ifeq ($(UNAME), Darwin)
 LDFLAGS = -lglfw -framework Cocoa -framework OpenGL
+else
+LDFLAGS = -lglfw
+endif
 
 BIN = 2d
 SRC = main.cc mesh.cc program.cc

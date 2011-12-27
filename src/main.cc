@@ -20,8 +20,7 @@ struct {
 	H3DNode node;
 	vec3f position;
 	vec3f orientation;
-} camera = {0, vec3f(0), vec3f(0)};
-
+} camera = {0, vec3f(0, 10, 0), vec3f(0)};
 
 // events
 
@@ -81,15 +80,16 @@ int main() {
 	H3DRes sphere_scene = h3dAddResource(H3DResTypes::SceneGraph, "models/sphere/sphere.scene.xml", 0);
 	// Font texture
 	H3DRes font_tex = h3dAddResource(H3DResTypes::Material, "overlays/font.material.xml", 0);
+	H3DRes panel_material = h3dAddResource(H3DResTypes::Material, "overlays/panel.material.xml", 0);
 	// Load added resources
 	h3dutLoadResourcesFromDisk("."); // important!
 
 	// Add model to scene
 	H3DNode terrain = h3dAddGroupNode(H3DRootNode, "terrain");
-	h3dSetNodeTransform(generate_chunk(terrain), -5, 0, -5, 0, 0, 0, 10, 10, 10);
+	//h3dSetNodeTransform(generate_chunk(terrain), -5, 0, -5, 0, 0, 0, 10, 10, 10);
 	
-	//H3DNode sphere = h3dAddNodes(terrain, sphere_scene);
-	//h3dSetNodeTransform(sphere, 0, 0, 0, 0, 0, 0, 5, 5, 5);
+	H3DNode sphere = h3dAddNodes(terrain, sphere_scene);
+	h3dSetNodeTransform(sphere, 0, 0, 0, 0, 0, 0, 5, 5, 5);
 
 
 	// Add light source
@@ -111,11 +111,20 @@ int main() {
 
 	h3dResizePipelineBuffers(pipeRes, WIN_W, WIN_H);
 	
+	H3DRes panel_material2 = h3dAddResource(H3DResTypes::Material, "overlays/panel.material.xml", 0);
+	
 	while (!glfwGetKey(GLFW_KEY_ESC) && glfwGetWindowParam(GLFW_OPENED)) {
 		// Increase animation time
 	    double t = delay();
 
-		h3dutShowText("0.01a", 0.01, 0.01, 0.03f, 1, 1, 1, font_tex);
+		// HUD
+		//h3dutShowText("0.01a", 0.01, 0.01, 0.03f, 1, 1, 1, font_tex);
+		h3dutShowFrameStats(font_tex, panel_material2, H3DUTMaxStatMode);
+
+		// inputs
+		if (glfwGetKey('E')) {
+			h3dSetNodeTransform(light, camera.position.x, camera.position.y, camera.position.z, camera.orientation.x, camera.orientation.y, camera.orientation.z, 1, 1, 1);
+		}
 
 		if (glfwGetKey('W')) { // forward
 			camera.position.x += -sinf(radian(camera.orientation.y)) * cosf(-radian(camera.orientation.x)) * CAMERA_T_SPEED * t;
@@ -168,8 +177,8 @@ inline double delay () {
 	double ellapsed = current - last;
 	
 	last = current;
-	if (ellapsed < 0.01)
-		glfwSleep(0.01 - ellapsed);
+	if (ellapsed < 0.03)
+		glfwSleep(0.03 - ellapsed);
 	
 	return (glfwGetKey('P')) ? 0 : ellapsed;
 }
