@@ -2,86 +2,123 @@
 #include <cmath>
 
 /* =========
- *	 vec3f
+ *	 vec3
  * ========= */
 
-inline vec3f::vec3f () {
+template <typename T>
+inline vec3<T>::vec3 () {
 }
 
-inline vec3f::vec3f (float x, float y, float z)
-	: x (x),
-	  y (y),
-	  z (z) {
-}
-
-inline vec3f::vec3f (float v)
+template <typename T>
+inline vec3<T>::vec3 (T v)
 	: x (v),
 	  y (v),
 	  z (v) {
 }
 
-inline float& vec3f::operator[] (int i) {
+template <typename T>
+inline vec3<T>::vec3 (T x, T y, T z)
+	: x (x),
+	  y (y),
+	  z (z) {
+}
+
+template <typename T>
+inline T& vec3<T>::operator[] (int i) {
 	return (&x)[i];
 }
 
-inline const float& vec3f::operator[] (int i) const {
+template <typename T>
+inline const T& vec3<T>::operator[] (int i) const {
 	return (&x)[i];
 }
 
-inline float vec3f::length () const {
+template <typename T>
+inline float vec3<T>::length () const {
     return sqrtf(x * x + y * y + z * z);
 }
 
-inline void vec3f::length (float l) {
+template <typename T>
+inline void vec3<T>::length (float l) {
+	assert(x != 0 || y != 0 || z != 0);
 	float ratio = l / length();
 	x *= ratio;
 	y *= ratio;
 	z *= ratio;
 }
 
-inline void vec3f::normalize () {
-	length(1.0);
+template <typename T>
+inline void vec3<T>::normalize () {
+	length(1);
 }
 
-inline vec3f vec3f::operator- () const {
-	return vec3f(-x, -y, -z);
+template <typename T>
+inline vec3<T> vec3<T>::operator- () const {
+	return vec3<T>(-x, -y, -z);
 }
 
-inline vec3f vec3f::operator+ (const vec3f& b) const {
-	return vec3f(x + b.x, y + b.y, z + b.z);
+template <typename T>
+inline vec3<T> vec3<T>::operator+ (const vec3<T>& b) const {
+	return vec3<T>(x + b.x, y + b.y, z + b.z);
 }
 
-inline vec3f vec3f::operator- (const vec3f& b) const {
-	return vec3f(x - b.x, y - b.y, z - b.z);
+template <typename T>
+inline vec3<T> vec3<T>::operator- (const vec3<T>& b) const {
+	return vec3<T>(x - b.x, y - b.y, z - b.z);
 }
 
-inline vec3f vec3f::operator* (float b) const {
-	return vec3f(x * b, y * b, z * b);
+template <typename T>
+inline vec3<T> vec3<T>::operator* (T b) const {
+	return vec3<T>(x * b, y * b, z * b);
 }
 
-inline vec3f& vec3f::operator= (float b) {
+template <typename T>
+inline vec3<T> vec3<T>::operator* (const vec3<T>& b) const {
+	return vec3<T>(x * b.x, y * b.y, z * b.z);
+}
+
+template <typename T>
+inline vec3<T> vec3<T>::operator/ (T b) const {
+	return vec3<T>(x / b, y / b, z / b);
+}
+
+template <typename T>
+inline bool vec3<T>::operator== (const vec3<T>& v) const {
+	return x == v.x && y == v.y && z == v.z;
+}
+
+template <typename T>
+inline bool vec3<T>::operator!= (const vec3<T>& v) const {
+	return x != v.x || y != v.y || z != v.z;
+}
+
+template <typename T>
+inline vec3<T>& vec3<T>::operator= (T b) {
 	x = b;
 	y = b;
 	z = b;
 	return *this;
 }
 
-inline vec3f& vec3f::operator+= (const vec3f& b) {
+template <typename T>
+inline vec3<T>& vec3<T>::operator+= (const vec3<T>& b) {
 	x += b.x;
 	y += b.y;
 	z += b.z;
 	return *this;
 }
 
-inline vec3f& vec3f::operator-= (const vec3f& b) {
+template <typename T>
+inline vec3<T>& vec3<T>::operator-= (const vec3<T>& b) {
 	x -= b.x;
 	y -= b.y;
 	z -= b.z;
 	return *this;
 }
 
-inline vec3f cross(const vec3f& a, const vec3f& b) {
-	vec3f v;
+template <typename T>
+inline vec3<T> cross(const vec3<T>& a, const vec3<T>& b) {
+	vec3<T> v;
 
     v.x = a.y * b.z - a.z * b.y;
     v.y = a.z * b.x - a.x * b.z;
@@ -90,7 +127,8 @@ inline vec3f cross(const vec3f& a, const vec3f& b) {
 	return v;
 }
 
-inline std::ostream& operator<< (std::ostream& out, const vec3f& v) {
+template <typename T>
+inline std::ostream& operator<< (std::ostream& out, const vec3<T>& v) {
 	out << '(' << v.x << ", " << v.y << ", " << v.z << ')';
 	return out;
 }
@@ -250,7 +288,6 @@ inline vec3f mat4f::operator* (const vec3f& b) const {
 }
 
 inline std::ostream& operator<< (std::ostream& out, const mat4f& m) {
-	out << std::endl;
 	out << m(0,0) << ",\t" << m(0,1) << ",\t" << m(0,2) << ",\t" << m(0,3) << std::endl;
 	out << m(1,0) << ",\t" << m(1,1) << ",\t" << m(1,2) << ",\t" << m(1,3) << std::endl;
 	out << m(2,0) << ",\t" << m(2,1) << ",\t" << m(2,2) << ",\t" << m(2,3) << std::endl;
@@ -269,5 +306,5 @@ inline float radian (float t) {
 inline vec3f cartesian (float theta_deg, float phi_deg, float r) {
 	float theta = radian(theta_deg), phi = radian(phi_deg);
 	float sin_theta = sin(theta);
-	return vec3f (r * sin_theta * cos(phi), r * cos(theta), r * sin_theta * sin(phi));
+	return vec3f(r * sin_theta * cos(phi), r * cos(theta), r * sin_theta * sin(phi));
 }

@@ -9,42 +9,77 @@
 #endif
 
 /* =========
- *	 vec3f
+ *	 vec3
  * ========= */
 
-struct vec3f{
-	float x, y, z;
-
-	vec3f();
-	vec3f(float v);
-	vec3f(float x, float y, float z);
-	float& operator[] (int i);
-	const float& operator[] (int i) const;
+template <typename T>
+struct vec3 {
+	union {
+		T x;
+		T r;
+		T phi;
+	};
 	
-	float length () const; // should return a float ?
+	union {
+		T y;
+		T g;
+		T theta;
+	};
+	
+	union {
+		T z;
+		T b;
+		T radius;
+	};
+
+	vec3 ();
+	vec3 (T v);
+	vec3 (T x, T y, T z);
+	
+	T& operator[] (int i);
+	const T& operator[] (int i) const;
+	
+	float length () const;
 	void length (float);
 	void normalize ();
 
-	vec3f operator- () const;
-	vec3f operator+ (const vec3f&) const;
-	vec3f operator- (const vec3f&) const;
-	vec3f operator* (float) const;
+	/* vec3tor to vec3tor casting */
+	template <typename R>
+	operator vec3<R> () const {
+		return vec3<R>(x, y, z);
+	};
 
-	vec3f& operator= (float);
-	vec3f& operator+= (const vec3f&);
-	vec3f& operator-= (const vec3f&);
+	vec3<T> operator- () const;
+	vec3<T> operator+ (const vec3<T>&) const;
+	vec3<T> operator- (const vec3<T>&) const;
+	vec3<T> operator* (T) const;
+	vec3<T> operator* (const vec3<T>& b) const;
+	vec3<T> operator/ (T) const;
+	bool operator== (const vec3<T>&) const;
+	bool operator!= (const vec3<T>&) const;
+
+	vec3<T>& operator= (T);
+	vec3<T>& operator+= (const vec3<T>&);
+	vec3<T>& operator-= (const vec3<T>&);
 };
 
-vec3f cross(const vec3f& u, const vec3f& v);
+template <typename T>
+vec3<T> cross (const vec3<T>& u, const vec3<T>& v);
 
-std::ostream& operator<< (std::ostream& out, const vec3f& v);
+template <typename T>
+std::ostream& operator<< (std::ostream& out, const vec3<T>& v);
+
+typedef vec3<int> vec3i;
+typedef vec3<float> vec3f;
+typedef vec3<short> vec3s;
+typedef vec3<GLubyte> vec3ub;
 
 /* =========
  *	 mat4f
  * =========
  *
- * 4x4 float matrix
- * stored in column major (vecs = columns)
+ * 4x4 float mat4frix
+ * stored in column major (vec3s = columns)
  */
 
 struct mat4f {
@@ -67,9 +102,13 @@ struct mat4f {
 	static mat4f translation (const vec3f& v);
 	static mat4f inverse (const mat4f& a);
 	
-	float determinant() const;
+	float determinant () const;
 	
 	mat4f operator* (const mat4f&) const;
+	
+	/* matrice * vector
+	 * uses the vector as a vec4f terminated by 1.0
+	 */
 	vec3f operator* (const vec3f&) const;
 };
 

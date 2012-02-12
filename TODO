@@ -3,6 +3,11 @@
 - print object under mouse (center of the screen)
 - retrieve model-space intersection
 - show frame-rate and others informations on screen
+
+* marching cube for the sphere equation
+* per-vertex normals
+
+* retrieve meshes informations
 * generate a flat terrain on the fly
 * add a ball under the cursor when colliding with the terrain
 * retrieve vertices in a defined radius around the intersection

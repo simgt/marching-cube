@@ -3,6 +3,7 @@
 
 // DEBUG
 #include <cassert>
+
 #ifdef NDEBUG
 #define outlog(x)
 #else
@@ -15,16 +16,13 @@
 // GENERAL PURPOSE
 
 typedef unsigned int uint;
-
+typedef unsigned short ushort;
+typedef unsigned char uchar;
 
 // HORDE3D
 
 #include <glfw.h>
 #include <Horde3D/Horde3D.h>
 #include <Horde3DUtils/Horde3DUtils.h>
-
-// GENERATOR
-
-H3DNode generate_chunk (H3DNode parent);
 
 #endif
