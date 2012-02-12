@@ -1,4 +1,5 @@
 #include <global.hh>
+#include <mc.hh>
 #include <util/math.hh>
 
 #include <string>
@@ -20,7 +21,7 @@ struct {
 	H3DNode node;
 	vec3f position;
 	vec3f orientation;
-} camera = {0, vec3f(0, 10, 0), vec3f(0)};
+} camera = {0, vec3f(0, -25, 0), vec3f(0)};
 
 // events
 
@@ -45,9 +46,9 @@ void mouse_button_listener (int button, int status) {
 			outlog(node);
 			
 			// OPTIM check if the intersection point is not available directly in model-space in H3D
-			const mat4f* mat;
-			h3dGetNodeTransMats(node, 0, (const float**)&mat); // both matrix representation are in column major mode (internal H3D and mat4f)
-			mat4f inv = mat4f::inverse(*mat); // world to model matrix
+			const mat4f* m;
+			h3dGetNodeTransMats(node, 0, (const float**)&m); // both matrix representation are in column major mode (internal H3D and mat)
+			mat4f inv = mat4f::inverse(*m); // world to model matrix
 			p = inv * p; // inverse the matrix and apply it to the position to recover the model-space position
 			outlog(p);
 		}
@@ -55,6 +56,29 @@ void mouse_button_listener (int button, int status) {
 }
 
 // main
+
+H3DNode generate_plane (H3DNode parent) {
+	vec3f positions[] = {
+		vec3f(0, 0, 0),
+		vec3f(1, 0, 0),
+		vec3f(0, 0, 1),
+		vec3f(1, 0, 1)
+	};
+
+	uint indexes[] = {
+		0, 2, 1,
+		1, 2, 3
+	};
+
+	H3DRes geometry = h3dutCreateGeometryRes("geoRes", 4, 6, (float*)positions, indexes, 0, 0, 0, 0, 0);
+	H3DNode chunk = h3dAddModelNode(parent, "DynGeoModelNode", geometry);
+	H3DRes material = h3dAddResource(H3DResTypes::Material, "mine.material.xml", 0);
+
+	h3dAddMeshNode(chunk, "DynGeoMesh", material, 0, 6, 0, 3);
+	h3dutLoadResourcesFromDisk(".");
+	
+	return chunk;
+}
 
 int main() {
 	// init
@@ -73,23 +97,24 @@ int main() {
 
 	// Initialize engine
 	h3dInit();
+	glDisable(GL_CULL_FACE);
 
 	// Add pipeline resource
 	H3DRes pipeRes = h3dAddResource(H3DResTypes::Pipeline, "pipelines/forward.pipeline.xml", 0);
 	// Add model resource
-	H3DRes sphere_scene = h3dAddResource(H3DResTypes::SceneGraph, "models/sphere/sphere.scene.xml", 0);
+	//H3DRes sphere_scene = h3dAddResource(H3DResTypes::SceneGraph, "models/sphere/sphere.scene.xml", 0);
 	// Font texture
-	H3DRes font_tex = h3dAddResource(H3DResTypes::Material, "overlays/font.material.xml", 0);
-	H3DRes panel_material = h3dAddResource(H3DResTypes::Material, "overlays/panel.material.xml", 0);
+	//H3DRes font_tex = h3dAddResource(H3DResTypes::Material, "overlays/font.material.xml", 0);
+	//H3DRes panel_material = h3dAddResource(H3DResTypes::Material, "overlays/panel.material.xml", 0);
 	// Load added resources
 	h3dutLoadResourcesFromDisk("."); // important!
 
 	// Add model to scene
 	H3DNode terrain = h3dAddGroupNode(H3DRootNode, "terrain");
-	//h3dSetNodeTransform(generate_chunk(terrain), -5, 0, -5, 0, 0, 0, 10, 10, 10);
+	h3dSetNodeTransform(generate_chunk(terrain), 0, 0, 0, 0, 0, 0, 1, 1, 1);
 	
-	H3DNode sphere = h3dAddNodes(terrain, sphere_scene);
-	h3dSetNodeTransform(sphere, 0, 0, 0, 0, 0, 0, 5, 5, 5);
+	//H3DNode sphere = h3dAddNodes(terrain, sphere_scene);
+	//h3dSetNodeTransform(sphere, 0, 0, 0, 0, 0, 0, 5, 5, 5);
 
 
 	// Add light source
@@ -111,7 +136,7 @@ int main() {
 
 	h3dResizePipelineBuffers(pipeRes, WIN_W, WIN_H);
 	
-	H3DRes panel_material2 = h3dAddResource(H3DResTypes::Material, "overlays/panel.material.xml", 0);
+	//H3DRes panel_material2 = h3dAddResource(H3DResTypes::Material, "overlays/panel.material.xml", 0);
 	
 	while (!glfwGetKey(GLFW_KEY_ESC) && glfwGetWindowParam(GLFW_OPENED)) {
 		// Increase animation time
@@ -119,7 +144,7 @@ int main() {
 
 		// HUD
 		//h3dutShowText("0.01a", 0.01, 0.01, 0.03f, 1, 1, 1, font_tex);
-		h3dutShowFrameStats(font_tex, panel_material2, H3DUTMaxStatMode);
+		//h3dutShowFrameStats(font_tex, panel_material2, H3DUTMaxStatMode);
 
 		// inputs
 		if (glfwGetKey('E')) {
