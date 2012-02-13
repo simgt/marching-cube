@@ -50,13 +50,17 @@ struct vec3 {
 	};
 
 	vec3<T> operator- () const;
+	vec3<T> operator+ (T) const;
 	vec3<T> operator+ (const vec3<T>&) const;
+	vec3<T> operator- (T) const;
 	vec3<T> operator- (const vec3<T>&) const;
 	vec3<T> operator* (T) const;
 	vec3<T> operator* (const vec3<T>& b) const;
 	vec3<T> operator/ (T) const;
 	bool operator== (const vec3<T>&) const;
 	bool operator!= (const vec3<T>&) const;
+	bool operator>= (const vec3<T>&) const;
+	bool operator<= (const vec3<T>&) const;
 
 	vec3<T>& operator= (T);
 	vec3<T>& operator+= (const vec3<T>&);
@@ -65,6 +69,9 @@ struct vec3 {
 
 template <typename T>
 vec3<T> cross (const vec3<T>& u, const vec3<T>& v);
+
+template <typename T>
+T dot (const vec3<T>& u, const vec3<T>& v);
 
 template <typename T>
 std::ostream& operator<< (std::ostream& out, const vec3<T>& v);

@@ -26,11 +26,11 @@ inline H3DNode generate_chunk (H3DNode parent) {
 							elements.size(),
 							(float*)positions.data(),
 							(uint*)elements.data(),
-							0/*(short*)normals.data()*/,
+							(short*)normals.data(),
 							0, 0, 0, 0
 					  );
 	H3DNode chunk = h3dAddModelNode(parent, "DynGeoModelNode", geometry);
-	H3DRes material = h3dAddResource(H3DResTypes::Material, "terrain/terrain.material.xml", 0);
+	H3DRes material = h3dAddResource(H3DResTypes::Material, "materials/mine.material.xml", 0);
 
 	h3dAddMeshNode(chunk, "DynGeoMesh", material, 0, elements.size(), 0, positions.size() - 1);
 	h3dutLoadResourcesFromDisk(".");

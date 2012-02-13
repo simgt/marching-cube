@@ -8,6 +8,7 @@
  *		density: x*x + 2*x + 17*y - z*z
  *
  * some triangles are generated with equal vertices
+ *		problem is coming from the interpolation
  *
  */
 
@@ -15,8 +16,19 @@
 #include "mc_table.hh"
 #include <stdlib.h>
 
-vec3f middle (vec3f a, vec3f b) {
-	return vec3f((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2);
+vec3f middle (unsigned char a, unsigned char b) {
+	const vec3f cube[8] = {
+		vec3f(0, 0, 0),
+		vec3f(1, 0, 0),
+		vec3f(1, 0, 1),
+		vec3f(0, 0, 1),
+		vec3f(0, 1, 0),
+		vec3f(1, 1, 0),
+		vec3f(1, 1, 1),
+		vec3f(0, 1, 1)
+	};
+	
+	return (cube[a] + cube[b]) / 2;
 }
 
 #define ISOLEVEL 0
@@ -32,10 +44,8 @@ vec3f linear_interpolation (unsigned char a, float va, unsigned char b, float vb
 		vec3f(0, 1, 1)
 	};
 	
-	if (a != b)
-		return cube[a] + (cube[b] - cube[a]) / (vb - va) * (ISOLEVEL - va);
-	else 
-		return cube[a];
+	assert(a != b);
+	return cube[a] + (cube[b] - cube[a]) / (vb - va) * (ISOLEVEL - va);
 }
 
 // memo
@@ -73,7 +83,8 @@ void marching_cube (const vec3i offset, const vec3i size, // input
 		{3, 7}
 	};
 	
-	// temp		
+	// temp
+	uint identical_vertices = 0;
 	float grid[size.x][size.y][size.z];
 	for (int i = 0; i < size.x; i++)  		 //x axis
 		for (int j = 0; j < size.y; j++)		 //y axis
@@ -161,32 +172,60 @@ void marching_cube (const vec3i offset, const vec3i size, // input
 					uint v[3]; // 3 vertices of the contructed triangle, used for normals calculation
 					
 					// add the 3 vertices to the triangles array (create vertices if required)
-					for (int m = n + 2; m >= n; m--) { // reverse indexes browsing for CW faces
+					for (int m = n; m <= n + 2; m++) { // browse triangle's vertices
 						int e = tri_table[index][m]; // retrieve the edge's cube-index
 
 						// check if the vertex has already been created
 						// create it and save it to the register if not
 						if (memo_cube[e] == -1) { // not memoized
-							// construct the triangle's vertex and save it to the cube register
-							memo_cube[e] = positions.size();
-							positions.push_back(origin + linear_interpolation(edg[e][0], val[edg[e][0]], edg[e][1], val[edg[e][1]]));
-							normals_f.push_back(vec3f(0, 0, 0));
-							//v.specular = vec3ub(rand() % 255, rand() % 255, rand() % 255);
+							vec3f position = origin + linear_interpolation(edg[e][0], val[edg[e][0]], edg[e][1], val[edg[e][1]]);
+							
+							// check if the interpolation has not already produced a vertex at this position
+							/*for (int i = 0; i < 12; i++)
+								if (memo_cube[i] != -1 && (position >= (positions[i] - 0.01)) && (position <= (positions[i] + 0.01))) {
+									memo_cube[e] = memo_cube[i];
+									break;
+								}*/
+							for (uint i = 0; i < positions.size(); i++)
+								if ((position >= (positions[i] - 0.01)) && (position <= (positions[i] + 0.01))) {
+									memo_cube[e] = i;
+									break;
+								}
+							
+							if (memo_cube[e] == -1) {
+								// construct the triangle's vertex and save it to the cube register
+								memo_cube[e] = positions.size();
+								positions.push_back(position);
+								normals_f.push_back(vec3f(0));
+								//normals.push_back(vec3s(rand() % 255, rand() % 255, rand() % 255));
+							}
 						}
 				
 						// add the vertex index to the element array
 						v[m - n] = memo_cube[e];
-						triangles.push_back(memo_cube[e]);
 					}
 					
 					// add the normalized face normal to the vertices normals
+					// TODO fix the algorithm to remove those quick-fixes
+					if (positions[v[0]] == positions[v[1]] || positions[v[1]] == positions[v[2]] || positions[v[0]] == positions[v[2]]) {
+						identical_vertices++;
+						continue;
+					}
+					
+					if (v[0] == v[1] || v[1] == v[2] || v[0] == v[2]) {
+						identical_vertices++;
+						continue;
+					}
+					
+					triangles.push_back(v[0]);
+					triangles.push_back(v[1]);
+					triangles.push_back(v[2]);
+					
 					// TODO
 					vec3f fn = cross(positions[v[1]] - positions[v[0]], positions[v[2]] - positions[v[0]]); // compute the triangle's normal
-					if (fn != vec3f(0, 0, 0)) { // TODO / BUG
-						fn.normalize();
-						for (int m = 0; m < 3; m++)
-							normals_f[v[m]] += fn;
-					}
+					fn.normalize();
+					for (int m = 0; m < 3; m++)
+						normals_f[v[m]] += fn;
 				}
 				
 				// save current cube into memoization registers
@@ -220,6 +259,8 @@ void marching_cube (const vec3i offset, const vec3i size, // input
 			outlog(normals_f[i]);
 		}
 	}
+	
+	std::cout << identical_vertices << " triangles with identical vertices discarded" << std::endl;
 	
 	assert(positions.size() == normals.size());
 }
