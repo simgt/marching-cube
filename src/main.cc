@@ -21,7 +21,7 @@ struct {
 	H3DNode node;
 	vec3f position;
 	vec3f orientation;
-} camera = {0, vec3f(0, -25, 0), vec3f(0)};
+} camera = {0, vec3f(0, 25, 0), vec3f(0)};
 
 // events
 
@@ -57,29 +57,6 @@ void mouse_button_listener (int button, int status) {
 
 // main
 
-H3DNode generate_plane (H3DNode parent) {
-	vec3f positions[] = {
-		vec3f(0, 0, 0),
-		vec3f(1, 0, 0),
-		vec3f(0, 0, 1),
-		vec3f(1, 0, 1)
-	};
-
-	uint indexes[] = {
-		0, 2, 1,
-		1, 2, 3
-	};
-
-	H3DRes geometry = h3dutCreateGeometryRes("geoRes", 4, 6, (float*)positions, indexes, 0, 0, 0, 0, 0);
-	H3DNode chunk = h3dAddModelNode(parent, "DynGeoModelNode", geometry);
-	H3DRes material = h3dAddResource(H3DResTypes::Material, "mine.material.xml", 0);
-
-	h3dAddMeshNode(chunk, "DynGeoMesh", material, 0, 6, 0, 3);
-	h3dutLoadResourcesFromDisk(".");
-	
-	return chunk;
-}
-
 int main() {
 	// init
 	glfwInit();
@@ -97,10 +74,9 @@ int main() {
 
 	// Initialize engine
 	h3dInit();
-	glDisable(GL_CULL_FACE);
 
 	// Add pipeline resource
-	H3DRes pipeRes = h3dAddResource(H3DResTypes::Pipeline, "pipelines/forward.pipeline.xml", 0);
+	H3DRes pipeRes = h3dAddResource(H3DResTypes::Pipeline, "pipelines/mine.pipeline.xml", 0);
 	// Add model resource
 	//H3DRes sphere_scene = h3dAddResource(H3DResTypes::SceneGraph, "models/sphere/sphere.scene.xml", 0);
 	// Font texture

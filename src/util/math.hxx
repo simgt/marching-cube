@@ -58,8 +58,18 @@ inline vec3<T> vec3<T>::operator- () const {
 }
 
 template <typename T>
+vec3<T> vec3<T>::operator+ (T b) const {
+	return vec3<T>(x + b, y + b, z + b);
+}
+
+template <typename T>
 inline vec3<T> vec3<T>::operator+ (const vec3<T>& b) const {
 	return vec3<T>(x + b.x, y + b.y, z + b.z);
+}
+
+template <typename T>
+vec3<T> vec3<T>::operator- (T b) const {
+	return vec3<T>(x - b, y - b, z - b);
 }
 
 template <typename T>
@@ -90,6 +100,16 @@ inline bool vec3<T>::operator== (const vec3<T>& v) const {
 template <typename T>
 inline bool vec3<T>::operator!= (const vec3<T>& v) const {
 	return x != v.x || y != v.y || z != v.z;
+}
+
+template <typename T>
+bool vec3<T>::operator>= (const vec3<T>& v) const {
+	return x >= v.x && y >= v.y && z >= v.z;
+}
+
+template <typename T>
+bool vec3<T>::operator<= (const vec3<T>& v) const {
+	return x <= v.x && y <= v.y && z <= v.z;
 }
 
 template <typename T>
@@ -125,6 +145,11 @@ inline vec3<T> cross(const vec3<T>& a, const vec3<T>& b) {
     v.z = a.x * b.y - a.y * b.x;
 
 	return v;
+}
+
+template <typename T>
+inline T dot (const vec3<T>& u, const vec3<T>& v) {
+	return u.x * v.x + u.y * v.y + u.z * v.z;
 }
 
 template <typename T>
