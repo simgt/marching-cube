@@ -98,6 +98,11 @@ inline bool vec3<T>::operator== (const vec3<T>& v) const {
 }
 
 template <typename T>
+inline bool vec3<T>::operator!= (T v) const {
+	return x != v || y != v || z != v;
+}
+
+template <typename T>
 inline bool vec3<T>::operator!= (const vec3<T>& v) const {
 	return x != v.x || y != v.y || z != v.z;
 }
@@ -137,6 +142,14 @@ inline vec3<T>& vec3<T>::operator-= (const vec3<T>& b) {
 }
 
 template <typename T>
+inline vec3<T>& vec3<T>::operator*= (T v) {
+	x *= v;
+	y *= v;
+	z *= v;
+	return *this;
+}
+
+template <typename T>
 inline vec3<T> cross(const vec3<T>& a, const vec3<T>& b) {
 	vec3<T> v;
 
@@ -150,6 +163,11 @@ inline vec3<T> cross(const vec3<T>& a, const vec3<T>& b) {
 template <typename T>
 inline T dot (const vec3<T>& u, const vec3<T>& v) {
 	return u.x * v.x + u.y * v.y + u.z * v.z;
+}
+
+template <typename T>
+inline vec3<T> floor (const vec3<T>& v) {
+	return vec3<T>(floor(v.x), floor(v.y), floor(v.z));
 }
 
 template <typename T>
