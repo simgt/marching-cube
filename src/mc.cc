@@ -48,6 +48,21 @@ vec3f linear_interpolation (unsigned char a, float va, unsigned char b, float vb
 	return cube[a] + (cube[b] - cube[a]) / (vb - va) * (ISOLEVEL - va);
 }
 
+vec3f barycenter (uchar a, uchar va, uchar b, uchar vb) {
+	const vec3f cube[8] = {
+		vec3f(0, 0, 0),
+		vec3f(1, 0, 0),
+		vec3f(1, 0, 1),
+		vec3f(0, 0, 1),
+		vec3f(0, 1, 0),
+		vec3f(1, 1, 0),
+		vec3f(1, 1, 1),
+		vec3f(0, 1, 1)
+	};
+	assert (a != b);
+	return (cube[a] + cube[b]) / 2.0 + (cube[a] - cube[b]) * (va - vb) / 255.0;
+}
+
 // memo
 
 float density (const vec3f p) {
@@ -56,6 +71,12 @@ float density (const vec3f p) {
 	z -= p.z;*/
 	return p.x * p.x + 2 * p.x + 17 * p.y - p.z * p.z; // TODO: take sphere position into account
 	//return p.length() - 10;
+}
+
+uchar value (const vec3f p) {
+	return p.length() <= 10 ? 255
+		 : p.length() - 10 > 25 ? 0
+		 : (p.length() - 15) * 10;
 }
 
 // TODO: remove
@@ -143,10 +164,10 @@ void marching_cube (const vec3i offset, const vec3i size, // input
 				// get the index representing the cube's vertices configuration
 				uchar index = 0;
 				for (int n = 0; n < 8; n++)
-					if (val[n] <= ISOLEVEL) index |= (1 << n); // set nth bit to 1
+					if (val[n] < 255) index |= (1 << n); // set nth bit to 1
 
 				//check if the cube is completely inside or outside the volume
-    			if (edge_table[index] == 0) continue; // || edge_table[index] ??
+    			if (edge_table[index] == 0) continue; // || edge_table[index] == %fff ??
 
 				// retrieve indexes in the vertices array of the previously built vertices from the memoization register
 				int memo_cube[12] = {

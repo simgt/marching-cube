@@ -6,8 +6,6 @@
 #include <global.hh>
 #include <util/math.hh>
 
-typedef float (*density_f)(const vec3f);
-
 void marching_cube (const vec3i offset, const vec3i size,
 					std::vector<vec3f>& positions, std::vector<vec3s>& normals, std::vector<uint>& triangles);
 
