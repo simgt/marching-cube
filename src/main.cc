@@ -25,7 +25,20 @@ struct {
 
 // events
 
-void keyboard_listener (int, int) {
+void keyboard_listener (int key, int state) {
+	if (state == GLFW_RELEASE)
+		return;
+	
+	switch (key) {
+		case 'R':
+			h3dSetOption(H3DOptions::WireframeMode, !h3dGetOption(H3DOptions::WireframeMode));
+			h3dSetOption(H3DOptions::DebugViewMode, false);
+			break;
+		case 'F':
+			h3dSetOption(H3DOptions::WireframeMode, false);
+			h3dSetOption(H3DOptions::DebugViewMode, !h3dGetOption(H3DOptions::DebugViewMode));
+			break;
+	}
 }
 
 void mouse_position_listener (int mx, int my) {

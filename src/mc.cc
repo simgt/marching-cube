@@ -16,6 +16,8 @@
 #include "mc_table.hh"
 #include <stdlib.h>
 
+#define FLOAT_CMP 0.01
+
 vec3f middle (unsigned char a, unsigned char b) {
 	const vec3f cube[8] = {
 		vec3f(0, 0, 0),
@@ -32,7 +34,7 @@ vec3f middle (unsigned char a, unsigned char b) {
 }
 
 #define ISOLEVEL 0
-vec3f linear_interpolation (unsigned char a, float va, unsigned char b, float vb) {
+vec3f linear (unsigned char a, float va, unsigned char b, float vb) {
 	const vec3f cube[8] = {
 		vec3f(0, 0, 0),
 		vec3f(1, 0, 0),
@@ -178,7 +180,7 @@ void marching_cube (const vec3i offset, const vec3i size, // input
 						// check if the vertex has already been created
 						// create it and save it to the register if not
 						if (memo_cube[e] == -1) { // not memoized
-							vec3f position = origin + linear_interpolation(edg[e][0], val[edg[e][0]], edg[e][1], val[edg[e][1]]);
+							vec3f position = origin + linear(edg[e][0], val[edg[e][0]], edg[e][1], val[edg[e][1]]);
 							
 							// check if the interpolation has not already produced a vertex at this position
 							/*for (int i = 0; i < 12; i++)
@@ -187,7 +189,7 @@ void marching_cube (const vec3i offset, const vec3i size, // input
 									break;
 								}*/
 							for (uint i = 0; i < positions.size(); i++)
-								if ((position >= (positions[i] - 0.01)) && (position <= (positions[i] + 0.01))) {
+								if ((position >= (positions[i] - FLOAT_CMP)) && (position <= (positions[i] + FLOAT_CMP))) {
 									memo_cube[e] = i;
 									break;
 								}
