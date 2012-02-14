@@ -1,12 +1,12 @@
 CC = clang++
-CFLAGS = -W -Wall -O0 -std=c++0x \
+CFLAGS = -W -Wall -O3 -std=c++0x \
 		-Isrc \
 		$(addprefix -I, /Library/Frameworks/Horde3D.framework/Headers /Library/Frameworks/Horde3DUtils.framework/Headers)
 LDFLAGS = -lglfw \
 		$(addprefix -framework , Horde3D Horde3DUtils OpenGL Cocoa)
 
 BIN = build/fieldcraft
-SRC = main.cc mc.cc
+SRC = main.cc mc.cc util/h3d.cc
 
 ## compile ##
 

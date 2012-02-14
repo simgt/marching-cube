@@ -57,7 +57,8 @@ float density (const vec3f p) {
 	y -= p.y;
 	z -= p.z;*/
 	//return p.x * p.x + 2 * p.x + 17 * p.y - p.z * p.z; // TODO: take sphere position into account
-	return p.length() - 5;
+	//return p.length() - 5;
+	return p.y;
 }
 
 // TODO: remove
@@ -244,9 +245,9 @@ void marching_cube (const vec3i offset, const vec3i size, // input
 	
 	// set normals length to 1.0
 	for (uint i = 0; i < normals.size(); i++)
-		normals[i].normalize();
+		if (normals[i] != vec3f(0)) normals[i].normalize(); // TODO
 	
-	std::cout << disc << " triangles discarded" << std::endl;
+	//std::cout << positions.size() << " vertices and " << triangles.size() / 3 << " triangles generated (" << disc << " discarded)"<< std::endl;
 	
 	assert(positions.size() == normals.size());
 }

@@ -108,8 +108,18 @@ inline bool vec3<T>::operator!= (const vec3<T>& v) const {
 }
 
 template <typename T>
+bool vec3<T>::operator> (const vec3<T>& v) const {
+	return x > v.x && y > v.y && z > v.z;
+}
+
+template <typename T>
 bool vec3<T>::operator>= (const vec3<T>& v) const {
 	return x >= v.x && y >= v.y && z >= v.z;
+}
+
+template <typename T>
+bool vec3<T>::operator< (const vec3<T>& v) const {
+	return x < v.x && y < v.y && z < v.z;
 }
 
 template <typename T>
