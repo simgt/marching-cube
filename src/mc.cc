@@ -56,8 +56,8 @@ float density (const vec3f p) {
 	/*x -= p.x;
 	y -= p.y;
 	z -= p.z;*/
-	return p.x * p.x + 2 * p.x + 17 * p.y - p.z * p.z; // TODO: take sphere position into account
-	//return p.length() - 10;
+	//return p.x * p.x + 2 * p.x + 17 * p.y - p.z * p.z; // TODO: take sphere position into account
+	return p.length() - 5;
 }
 
 // TODO: remove
@@ -69,68 +69,63 @@ struct edge_plane {
 // marching cube
 
 void marching_cube (const vec3i offset, const vec3i size, // input
-					std::vector<vec3f>& positions, std::vector<vec3s>& normals, std::vector<uint>& triangles) { // output
-	const uchar edg[][2] = {
-		{0, 1},
-		{1, 2},
-		{2, 3},
-		{3, 0},
-		{4, 5},
-		{5, 6},
-		{6, 7},
-		{7, 4},
-		{0, 4},
-		{1, 5},
-		{2, 6},
-		{3, 7}
+					std::vector<vec3f>& positions, std::vector<vec3f>& normals, std::vector<uint>& triangles) { // output
+	const uchar edg[12][2] = {
+		/*  0 */ {0, 1},
+		/*  1 */ {1, 2},
+		/*  2 */ {2, 3},
+		/*  3 */ {3, 0},
+		/*  4 */ {4, 5},
+		/*  5 */ {5, 6},
+		/*  6 */ {6, 7},
+		/*  7 */ {7, 4},
+		/*  8 */ {0, 4},
+		/*  9 */ {1, 5},
+		/* 10 */ {2, 6},
+		/* 11 */ {3, 7}
 	};
 	
-	// temp
-	uint identical_vertices = 0;
-	float grid[size.x][size.y][size.z];
-	for (int i = 0; i < size.x; i++)  		 //x axis
-		for (int j = 0; j < size.y; j++)		 //y axis
-			for (int k = 0; k < size.z; k++) //z axis
-				grid[i][j][k] = density(vec3f(offset.x + i, offset.y + j, offset.z + k));
+	uint disc = 0; // discarded triangles
 	
-	positions.clear(); // TODO rm?
-	normals.clear();
-	triangles.clear(); // TODO rm?
-
-	std::vector<vec3f> normals_f;
+	// temp
+	float grid[size.x + 1][size.y + 1][size.z + 1];
+	for (int i = 0; i < size.x + 1; i++)  		 //x axis
+		for (int j = 0; j < size.y + 1; j++)		 //y axis
+			for (int k = 0; k < size.z + 1; k++) //z axis
+				grid[i][j][k] = density(vec3f(offset.x + i, offset.y + j, offset.z + k));
 
 	// X-axis memoization (YZ plane)
 	edge_plane memo_x = {
-		(int*)alloca((size.y) * size.z * sizeof(int)),
-		(int*)alloca(size.y * (size.z) * sizeof(int))
+		(int*)alloca((size.y + 1) * size.z * sizeof(int)),
+		(int*)alloca(size.y * (size.z + 1) * sizeof(int))
 	};
 
-	std::memset(memo_x.oy, -1, (size.y) * size.z * sizeof(int));
-	std::memset(memo_x.oz, -1, size.y * (size.z) * sizeof(int));
+	std::memset(memo_x.oy, -1, (size.y + 1) * size.z * sizeof(int));
+	std::memset(memo_x.oz, -1, size.y * (size.z + 1) * sizeof(int));
 	
 	// X-AXIS
-	for (int i = 0; i < size.x - 1; i++) { 		//x axis
+	for (int i = 0; i < size.x; i++) { 		//x axis
 		// X-axis memoization (YZ plane)
 		edge_plane next_x = {
-			(int*)alloca((size.y) * size.z * sizeof(int)),
-			(int*)alloca(size.y * (size.z) * sizeof(int))
+			(int*)alloca((size.y + 1) * size.z * sizeof(int)),
+			(int*)alloca(size.y * (size.z + 1) * sizeof(int))
 		};
 
-		std::memset(next_x.oy, -1, (size.y) * size.z * sizeof(int));
-		std::memset(next_x.oz, -1, size.y * (size.z) * sizeof(int));
+		std::memset(next_x.oy, -1, (size.y + 1) * size.z * sizeof(int));
+		std::memset(next_x.oz, -1, size.y * (size.z + 1) * sizeof(int));
 		
 		// Y-axis memoization: indexes of the previous z-line
-		int memo_y[3 * (size.y - 1) + 1]; // TODO: check if not 3 * Y + 1 ???
-		std::memset(memo_y, -1, (3 * (size.y - 1) + 1) * sizeof(int));
+		int memo_y[3 * size.y + 1]; // TODO: check if not 3 * Y + 1 ???
+		std::memset(memo_y, -1, (3 * size.y + 1) * sizeof(int));
 
 		// Y-AXIS
-		for (int j = 0; j < size.y - 1; j++) {
+		for (int j = 0; j < size.y; j++) {
 			// memoization: indexes of the previous z-line
-			int next_y[3 * (size.y - 1) + 1];
-			std::memset(next_y, -1, (3 * (size.y - 1) + 1) * sizeof(int));
+			int next_y[3 * size.y + 1];
+			std::memset(next_y, -1, (3 * size.y + 1) * sizeof(int));
 
 			//z axis
-			for (int k = 0; k < size.z - 1; k++) {
+			for (int k = 0; k < size.z; k++) {
 				float val[8] = { // fetch the value of the eight vertices of the cube
 					grid[i    ][j    ][k    ],
 					grid[i + 1][j    ][k    ],
@@ -167,15 +162,15 @@ void marching_cube (const vec3i offset, const vec3i size, // input
 				};
 
 				// get the origin corner of the cube
-				vec3f origin (offset.x + i, offset.y + j, offset.z + k);
+				vec3f origin (i, j, k);
 
 				// build the triangles using tri_table
 				for (int n = 0; tri_table[index][n] != -1; n += 3) {
 					uint v[3]; // 3 vertices of the contructed triangle, used for normals calculation
 					
 					// add the 3 vertices to the triangles array (create vertices if required)
-					for (int m = n; m <= n + 2; m++) { // browse triangle's vertices
-						int e = tri_table[index][m]; // retrieve the edge's cube-index
+					for (int m = 0; m < 3; m++) { // browse triangle's vertices
+						int e = tri_table[index][n + m]; // retrieve the edge's cube-index
 
 						// check if the vertex has already been created
 						// create it and save it to the register if not
@@ -198,24 +193,19 @@ void marching_cube (const vec3i offset, const vec3i size, // input
 								// construct the triangle's vertex and save it to the cube register
 								memo_cube[e] = positions.size();
 								positions.push_back(position);
-								normals_f.push_back(vec3f(0));
+								normals.push_back(0);
 								//normals.push_back(vec3s(rand() % 255, rand() % 255, rand() % 255));
 							}
 						}
 				
 						// add the vertex index to the element array
-						v[m - n] = memo_cube[e];
+						v[m] = memo_cube[e];
 					}
 					
 					// add the normalized face normal to the vertices normals
-					// TODO fix the algorithm to remove those quick-fixes
-					if (positions[v[0]] == positions[v[1]] || positions[v[1]] == positions[v[2]] || positions[v[0]] == positions[v[2]]) {
-						identical_vertices++;
-						continue;
-					}
-					
+					// TODO fix the algorithm to remove those quick-fixes					
 					if (v[0] == v[1] || v[1] == v[2] || v[0] == v[2]) {
-						identical_vertices++;
+						disc++;
 						continue;
 					}
 					
@@ -223,11 +213,11 @@ void marching_cube (const vec3i offset, const vec3i size, // input
 					triangles.push_back(v[1]);
 					triangles.push_back(v[2]);
 					
-					// TODO
+					// face normal computing and adding to the vertices
 					vec3f fn = cross(positions[v[1]] - positions[v[0]], positions[v[2]] - positions[v[0]]); // compute the triangle's normal
 					fn.normalize();
 					for (int m = 0; m < 3; m++)
-						normals_f[v[m]] += fn;
+						normals[v[m]] += fn;
 				}
 				
 				// save current cube into memoization registers
@@ -245,24 +235,18 @@ void marching_cube (const vec3i offset, const vec3i size, // input
 				/* 11 */ memo_x.oy[j * (size.z - 1) + k + 1] = memo_cube[11];
 			} // end of Z-loop
 
-			std::memcpy(memo_y, next_y, (3 * (size.y - 1) + 1) * sizeof(int));
+			std::memcpy(memo_y, next_y, (3 * size.y + 1) * sizeof(int));
 		} // end of Y-loop
 
-		std::memcpy(memo_x.oy, next_x.oy, size.y * size.z * sizeof(int));
-		std::memcpy(memo_x.oz, next_x.oz, size.y * size.z * sizeof(int));
+		std::memcpy(memo_x.oy, next_x.oy, (size.y + 1) * size.z * sizeof(int));
+		std::memcpy(memo_x.oz, next_x.oz, size.y * (size.z + 1) * sizeof(int));
 	} // end of X-loop
 	
-	// browse every vertices normals and normalize them
-	// TODO
-	for (uint i = 0; i < normals_f.size(); i++) {
-		normals_f[i].normalize();
-		normals.push_back(vec3s(normals_f[i].x * 32767, normals_f[i].y * 32767, normals_f[i].z * 32767));
-		if (normals[i] == vec3s(0, 0, 0)) {
-			outlog(normals_f[i]);
-		}
-	}
+	// set normals length to 1.0
+	for (uint i = 0; i < normals.size(); i++)
+		normals[i].normalize();
 	
-	std::cout << identical_vertices << " triangles with identical vertices discarded" << std::endl;
+	std::cout << disc << " triangles discarded" << std::endl;
 	
 	assert(positions.size() == normals.size());
 }

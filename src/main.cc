@@ -12,6 +12,8 @@
 
 #define PICK_RAY_LENGTH 10.0f 
 
+H3DNode world;
+
 // time
 double delay ();
 
@@ -21,7 +23,7 @@ struct {
 	H3DNode node;
 	vec3f position;
 	vec3f orientation;
-} camera = {0, vec3f(0, 25, 0), vec3f(0)};
+} camera = {0, vec3f(0, 5, 0), vec3f(0)};
 
 // events
 
@@ -37,6 +39,10 @@ void keyboard_listener (int key, int state) {
 		case 'F':
 			h3dSetOption(H3DOptions::WireframeMode, false);
 			h3dSetOption(H3DOptions::DebugViewMode, !h3dGetOption(H3DOptions::DebugViewMode));
+			break;
+		case GLFW_KEY_SPACE:
+			outlog((vec3i)floor(camera.position / CHUNK_SIZE));
+			generate_chunk(world, floor(camera.position / CHUNK_SIZE));
 			break;
 	}
 }
@@ -99,8 +105,8 @@ int main() {
 	h3dutLoadResourcesFromDisk("."); // important!
 
 	// Add model to scene
-	H3DNode terrain = h3dAddGroupNode(H3DRootNode, "terrain");
-	h3dSetNodeTransform(generate_chunk(terrain), 0, 0, 0, 0, 0, 0, 1, 1, 1);
+	world = h3dAddGroupNode(H3DRootNode, "world");
+	//H3DNode chunk = generate_chunk(world, vec3i(-1));
 	
 	//H3DNode sphere = h3dAddNodes(terrain, sphere_scene);
 	//h3dSetNodeTransform(sphere, 0, 0, 0, 0, 0, 0, 5, 5, 5);
