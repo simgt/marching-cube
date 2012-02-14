@@ -60,7 +60,9 @@ struct vec3 {
 	bool operator== (const vec3<T>&) const;
 	bool operator!= (T) const;
 	bool operator!= (const vec3<T>&) const;
+	bool operator> (const vec3<T>&) const;
 	bool operator>= (const vec3<T>&) const;
+	bool operator< (const vec3<T>&) const;
 	bool operator<= (const vec3<T>&) const;
 
 	vec3<T>& operator= (T);
