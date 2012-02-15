@@ -1,12 +1,13 @@
 #include <global.hh>
-#include <mc.hh>
 #include <util/math.hh>
+#include <map/map.hh>
 
 #include <glfw.h>
 #include <Horde3D/Horde3D.h>
 #include <Horde3DUtils/Horde3DUtils.h>
 
 #include <string>
+
 
 #define WIN_W 800
 #define WIN_H 600
@@ -15,8 +16,6 @@
 #define CAMERA_R_SPEED 0.1f // angular speed (degrees)
 
 #define PICK_RAY_LENGTH 10.0f 
-
-H3DNode world;
 
 // time
 double delay ();
@@ -29,7 +28,7 @@ struct {
 	vec3f orientation;
 } camera = {0, vec3f(0, 5, 0), vec3f(0)};
 
-template <typename T, uint S>
+/*template <typename T, uint S>
 struct circular_array {
 	T data[S];
 
@@ -50,9 +49,14 @@ struct circular_array {
 	};
 	
 	//offset = m >= 0 ? (offset + m) % 8 : (offset + 8 - (-m % 8)) % 8;
-};
+};*/
 
-#define VIEW_DISTANCE 5
+/*
+ * TODO
+ * add thread-generated data to the map, must be freed when uploaded
+ */
+
+/*#define VIEW_DISTANCE 5
 #define MAP_SIZE (VIEW_DISTANCE * 2 + 1)
 struct map_t {
 	vec3i middle;
@@ -79,18 +83,18 @@ struct map_t {
 					if (it.x < middle.x - VIEW_DISTANCE || it.y < middle.y - VIEW_DISTANCE || it.z < middle.z - VIEW_DISTANCE
 					 || it.x > middle.x + VIEW_DISTANCE || it.y > middle.y + VIEW_DISTANCE || it.z > middle.z + VIEW_DISTANCE) { // outside previous bounds
 						if (data[it.x][it.y][it.z] != 0) h3dRemoveNode(data[it.x][it.y][it.z]); // can be removed after initialization
-						data[it.x][it.y][it.z] = generate_chunk(world, it);
+						data[it.x][it.y][it.z] = Map::worker(world, it);
 					}
 				}
 		
 		middle = p;
 	}
 	//offset = m >= 0 ? (offset + m) % 8 : (offset + 8 - (-m % 8)) % 8;
-};
-
-map_t map;
+};*/
 
 // events
+
+tbb::concurrent_bounded_queue<vec3i> chunks_queue;
 
 void keyboard_listener (int key, int state) {
 	if (state == GLFW_RELEASE)
@@ -106,7 +110,8 @@ void keyboard_listener (int key, int state) {
 			h3dSetOption(H3DOptions::DebugViewMode, !h3dGetOption(H3DOptions::DebugViewMode));
 			break;
 		case GLFW_KEY_SPACE:
-			map.move(floor(camera.position / CHUNK_SIZE));
+			chunks_queue.push(floor(camera.position / Map::chunk_size));
+			std::cout << "Pushed " << floor(camera.position / Map::chunk_size) << std::endl;
 			break;
 	}
 }
@@ -169,7 +174,7 @@ int main() {
 	h3dutLoadResourcesFromDisk("."); // important!
 
 	// Add model to scene
-	world = h3dAddGroupNode(H3DRootNode, "world");
+	H3DNode world = h3dAddGroupNode(H3DRootNode, "world");
 	
 	//H3DNode sphere = h3dAddNodes(terrain, sphere_scene);
 	//h3dSetNodeTransform(sphere, 0, 0, 0, 0, 0, 0, 5, 5, 5);
@@ -196,9 +201,16 @@ int main() {
 	
 	//H3DRes panel_material2 = h3dAddResource(H3DResTypes::Material, "overlays/panel.material.xml", 0);
 	
+	// MAP
+	std::thread* map_worker = Map::launch_worker(world, &chunks_queue);
+	
+	// MAIN LOOP
+	
 	while (!glfwGetKey(GLFW_KEY_ESC) && glfwGetWindowParam(GLFW_OPENED)) {
 		// Increase animation time
 	    double t = delay();
+
+		Map::chunk_uploader.try_process_item(); // upload at most one chunk per round
 
 		// HUD
 		//h3dutShowText("0.01a", 0.01, 0.01, 0.03f, 1, 1, 1, font_tex);
@@ -232,13 +244,6 @@ int main() {
 		}
 		
 		h3dSetNodeTransform(camera.node, camera.position.x, camera.position.y, camera.position.z, camera.orientation.x, camera.orientation.y, 0, 1, 1, 1);
-
-	    // Set new model position
-	    /*h3dSetNodeTransform(model, t * 10, 0, 0,  // Translation
-	                         0, 0, 0,              // Rotation
-	                         1, 1, 1);            // Scale */
-
-		map.move(floor(camera.position / CHUNK_SIZE));
 
 	    // Render scene
 	    h3dRender(camera.node);

@@ -93,6 +93,11 @@ inline vec3<T> vec3<T>::operator/ (T b) const {
 }
 
 template <typename T>
+inline vec3<T> vec3<T>::operator/ (const vec3<T>& b) const {
+	return vec3<T>(x / b.x, y / b.y, z / b.z);
+}
+
+template <typename T>
 inline bool vec3<T>::operator== (const vec3<T>& v) const {
 	return x == v.x && y == v.y && z == v.z;
 }
@@ -156,6 +161,14 @@ inline vec3<T>& vec3<T>::operator*= (T v) {
 	x *= v;
 	y *= v;
 	z *= v;
+	return *this;
+}
+
+template <typename T>
+inline vec3<T>& vec3<T>::operator*= (const vec3<T>& v) {
+	x *= v.x;
+	y *= v.y;
+	z *= v.z;
 	return *this;
 }
 
