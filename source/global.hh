@@ -12,17 +12,12 @@
 	std::cout << #x << ": " << x << std::endl;
 #endif
 
-
 // GENERAL PURPOSE
 
 typedef unsigned int uint;
+typedef unsigned short uint16;
+typedef unsigned int uint32;
 typedef unsigned short ushort;
 typedef unsigned char uchar;
-
-// HORDE3D
-
-#include <glfw.h>
-#include <Horde3D/Horde3D.h>
-#include <Horde3DUtils/Horde3DUtils.h>
 
 #endif

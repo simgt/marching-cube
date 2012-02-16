@@ -1,16 +1,17 @@
 CC = clang++
 CFLAGS = -W -Wall -O0 -std=c++0x \
-		-Isrc \
+		-Isource -I/opt/local/include \
 		$(addprefix -I, /Library/Frameworks/Horde3D.framework/Headers /Library/Frameworks/Horde3DUtils.framework/Headers)
-LDFLAGS = -lglfw \
+LDFLAGS = -lglfw -ltbb \
 		$(addprefix -framework , Horde3D Horde3DUtils OpenGL Cocoa)
 
-BIN = build/fieldcraft
-SRC = main.cc mc.cc
+BIN = build/sculpt
+SRC = main.cc util/h3d.cc \
+	  map/worker.cc map/marching_cube.cc
 
 ## compile ##
 
-OBJ = $(addprefix src/, $(SRC:.cc=.o))
+OBJ = $(addprefix source/, $(SRC:.cc=.o))
 
 all : $(BIN)
 
