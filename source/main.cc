@@ -1,10 +1,15 @@
 #include <global.hh>
-#include <mc.hh>
 #include <util/math.hh>
+#include <map/map.hh>
+
+#include <glfw.h>
+#include <Horde3D/Horde3D.h>
+#include <Horde3DUtils/Horde3DUtils.h>
 
 #include <string>
 
-#define WIN_W 800
+
+#define WIN_W 1024
 #define WIN_H 600
 
 #define CAMERA_T_SPEED 10.0f
@@ -21,11 +26,30 @@ struct {
 	H3DNode node;
 	vec3f position;
 	vec3f orientation;
-} camera = {0, vec3f(0, 25, 0), vec3f(0)};
+} camera = {0, vec3f(0, 5, 0), vec3f(0)};
 
 // events
 
-void keyboard_listener (int, int) {
+tbb::concurrent_bounded_queue<vec3i> chunks_queue;
+
+void keyboard_listener (int key, int state) {
+	if (state == GLFW_RELEASE)
+		return;
+	
+	switch (key) {
+		case 'R':
+			h3dSetOption(H3DOptions::WireframeMode, !h3dGetOption(H3DOptions::WireframeMode));
+			h3dSetOption(H3DOptions::DebugViewMode, false);
+			break;
+		case 'F':
+			h3dSetOption(H3DOptions::WireframeMode, false);
+			h3dSetOption(H3DOptions::DebugViewMode, !h3dGetOption(H3DOptions::DebugViewMode));
+			break;
+		case GLFW_KEY_SPACE:
+			chunks_queue.push(floor(camera.position / Map::chunk_size));
+			std::cout << "Pushed " << floor(camera.position / Map::chunk_size) << std::endl;
+			break;
+	}
 }
 
 void mouse_position_listener (int mx, int my) {
@@ -86,8 +110,7 @@ int main() {
 	h3dutLoadResourcesFromDisk("."); // important!
 
 	// Add model to scene
-	H3DNode terrain = h3dAddGroupNode(H3DRootNode, "terrain");
-	h3dSetNodeTransform(generate_chunk(terrain), 0, 0, 0, 0, 0, 0, 1, 1, 1);
+	H3DNode world = h3dAddGroupNode(H3DRootNode, "world");
 	
 	//H3DNode sphere = h3dAddNodes(terrain, sphere_scene);
 	//h3dSetNodeTransform(sphere, 0, 0, 0, 0, 0, 0, 5, 5, 5);
@@ -114,9 +137,16 @@ int main() {
 	
 	//H3DRes panel_material2 = h3dAddResource(H3DResTypes::Material, "overlays/panel.material.xml", 0);
 	
+	// MAP
+	std::thread* map_worker = Map::launch_worker(world, &chunks_queue);
+	
+	// MAIN LOOP
+	
 	while (!glfwGetKey(GLFW_KEY_ESC) && glfwGetWindowParam(GLFW_OPENED)) {
 		// Increase animation time
 	    double t = delay();
+
+		Map::update(floor(camera.position / Map::chunk_size), chunks_queue);
 
 		// HUD
 		//h3dutShowText("0.01a", 0.01, 0.01, 0.03f, 1, 1, 1, font_tex);
@@ -150,11 +180,6 @@ int main() {
 		}
 		
 		h3dSetNodeTransform(camera.node, camera.position.x, camera.position.y, camera.position.z, camera.orientation.x, camera.orientation.y, 0, 1, 1, 1);
-
-	    // Set new model position
-	    /*h3dSetNodeTransform(model, t * 10, 0, 0,  // Translation
-	                         0, 0, 0,              // Rotation
-	                         1, 1, 1);            // Scale */
 
 	    // Render scene
 	    h3dRender(camera.node);
