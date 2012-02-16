@@ -5,13 +5,13 @@ CFLAGS = -W -Wall -O0 -std=c++0x \
 LDFLAGS = -lglfw -ltbb \
 		$(addprefix -framework , Horde3D Horde3DUtils OpenGL Cocoa)
 
-BIN = build/fieldcraft
+BIN = build/sculpt
 SRC = main.cc util/h3d.cc \
 	  map/worker.cc map/marching_cube.cc
 
 ## compile ##
 
-OBJ = $(addprefix src/, $(SRC:.cc=.o))
+OBJ = $(addprefix source/, $(SRC:.cc=.o))
 
 all : $(BIN)
 
