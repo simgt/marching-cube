@@ -15,8 +15,9 @@
 
 #include <vector>
 
-#define MAP_VIEW_DISTANCE 20
+#define MAP_VIEW_DISTANCE 5
 #define MAP_VIEW_AREA (2 * MAP_VIEW_DISTANCE + 1) * (2 * MAP_VIEW_DISTANCE + 1) * (2 * MAP_VIEW_DISTANCE + 1)
+#define MAP_CHUNKS_PER_ROUND 10
 
 namespace Map {
 	/* types */

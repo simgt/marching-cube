@@ -23,11 +23,11 @@ namespace Map {
 	}
 	
 	std::thread* launch_worker (H3DNode parent, tbb::concurrent_bounded_queue<vec3i>* queue) {	
-		Map::chunk_pipeline.add_filter(Map::chunk_allocator);
-		Map::chunk_pipeline.add_filter(Map::chunk_triangulator);
-		Map::chunk_pipeline.add_filter(Map::chunk_uploader);
+		chunk_pipeline.add_filter(Map::chunk_allocator);
+		chunk_pipeline.add_filter(Map::chunk_triangulator);
+		chunk_pipeline.add_filter(Map::chunk_uploader);
 		
-		Map::chunk_uploader.set_parent(parent);
+		chunk_uploader.set_parent(parent);
 
 		return new std::thread(worker, queue);
 	}
@@ -35,7 +35,7 @@ namespace Map {
 	void update (const vec3i& p, tbb::concurrent_bounded_queue<vec3i>& queue) {
 		static vec3i middle(1 << 15); // TODO FIX THIS SHIT !!
 
-		for (int i = 0; i < 10 && Map::chunk_uploader.try_process_item() != tbb::thread_bound_filter::end_of_stream; i++)
+		for (int i = 0; i < MAP_CHUNKS_PER_ROUND && chunk_uploader.try_process_item() != tbb::thread_bound_filter::end_of_stream; i++)
 			; // upload at most 5 chunks per round
 
 		if (middle == p)
@@ -52,8 +52,8 @@ namespace Map {
 
 	ChunkAllocator::ChunkAllocator ()
 		: tbb::filter (tbb::filter::parallel),
-		  middle (1 << 15),
-		  previous (1 << 15), // TODO FIX THIS SHIT !!
+		  middle (1 << 15), // TODO FIX THIS SHIT !!
+		  previous (0),
 		  it (0 - MAP_VIEW_DISTANCE) {
 	}
 
@@ -192,58 +192,3 @@ namespace Map {
 		this->parent = parent;
 	}
 }
-/*
-H3DNode Map::worker (H3DNode parent, vec3i chunk) {
-	std::stringstream name ("chunk");
-	std::vector<vec3f> positions;
-	std::vector<vec3f> normals;
-	std::vector<uint> elements;
-
-	name << chunk;
-
-	chunk *= Map::chunk_size; // one chunk = a CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE cube
-
-	// in thread:
-	Map::marching_cube(chunk, positions, normals, elements);
-
-	// convert vec3f normals to vec3s
-	std::vector<vec3s> normals_short (normals.size());
-	for (uint i = 0; i < normals.size(); i++) {
-		normals_short[i] = normals[i] * 32767;
-		//assert(normals_short[i] != 0);
-	}
-	
-	resource_block* block = create_geometry_data(
-		positions.size(),
-		elements.size(),
-		(float*)positions.data(),
-		(uint*)elements.data(),
-		(short*)normals_short.data(),
-		0, 0, 0, 0
-	);
-
-	// out of thread:
-	H3DRes geometry = h3dAddResource(H3DResTypes::Geometry, name.str().c_str(), 0);
-	if (geometry && block) h3dLoadResource(geometry, block->data, block->size);
-	delete[] (char*)block;
-
-	H3DRes geometry = h3dutCreateGeometryRes(
-							name.str().c_str(),
-							positions.size(),
-							elements.size(),
-							(float*)positions.data(),
-							(uint*)elements.data(),
-							(short*)normals_short.data(),
-							0, 0, 0, 0
-					  );
-
-	H3DNode model = h3dAddModelNode(parent, name.str().c_str(), geometry);
-	H3DRes material = h3dAddResource(H3DResTypes::Material, "materials/mine.material.xml", 0);
-
-	h3dAddMeshNode(model, "DynGeoMesh", material, 0, elements.size(), 0, positions.size() - 1);
-	h3dutLoadResourcesFromDisk(".");
-
-	h3dSetNodeTransform(model, chunk.x, chunk.y, chunk.z, 0, 0, 0, 1, 1, 1);
-
-	return model;
-}*/

@@ -12,7 +12,6 @@
 	std::cout << #x << ": " << x << std::endl;
 #endif
 
-
 // GENERAL PURPOSE
 
 typedef unsigned int uint;
