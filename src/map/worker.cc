@@ -1,4 +1,5 @@
 #include "map.hh"
+#include <util/algorithm.hh>
 
 #include <tbb/pipeline.h>
 
@@ -30,6 +31,20 @@ namespace Map {
 
 		return new std::thread(worker, queue);
 	}
+	
+	void update (const vec3i& p, tbb::concurrent_bounded_queue<vec3i>& queue) {
+		static vec3i middle(1 << 15); // TODO FIX THIS SHIT !!
+
+		for (int i = 0; i < 10 && Map::chunk_uploader.try_process_item() != tbb::thread_bound_filter::end_of_stream; i++)
+			; // upload at most 5 chunks per round
+
+		if (middle == p)
+			return;
+
+		std::cout << middle << " --> " << p << std::endl;		
+		queue.push(p);
+		middle = p;
+	}
 
 	/* ======= *
 	 * FILTERS *
@@ -37,32 +52,53 @@ namespace Map {
 
 	ChunkAllocator::ChunkAllocator ()
 		: tbb::filter (tbb::filter::parallel),
-		  middle (0),
-		  iterator (0 - MAP_VIEW_DISTANCE) {
+		  middle (1 << 15),
+		  previous (1 << 15), // TODO FIX THIS SHIT !!
+		  it (0 - MAP_VIEW_DISTANCE) {
 	}
 
 	void* ChunkAllocator::operator() (void*) {
-		Chunk* chunk = new Chunk(iterator);
-		
-		iterator.z++;
-		if (iterator.z > middle.z + MAP_VIEW_DISTANCE) {
-			iterator.z = 0;
-			iterator.y++;
+		// increment 'it' while in the previous bounds
+		while (it.x >= previous.x - MAP_VIEW_DISTANCE && it.y >= previous.y - MAP_VIEW_DISTANCE && it.z >= previous.z - MAP_VIEW_DISTANCE
+		 	&& it.x <= previous.x + MAP_VIEW_DISTANCE && it.y <= previous.y + MAP_VIEW_DISTANCE && it.z <= previous.z + MAP_VIEW_DISTANCE) {
+				it.z++;
+				if (it.z > middle.z + MAP_VIEW_DISTANCE) {
+					it.z = middle.z - MAP_VIEW_DISTANCE;
+					it.y++;
+				}
+
+				if (it.y > middle.y + MAP_VIEW_DISTANCE) {
+					it.y = middle.y - MAP_VIEW_DISTANCE;
+					it.x++;
+				}
+
+				if (it.x > middle.x + MAP_VIEW_DISTANCE) return 0;
 		}
 		
-		if (iterator.y > middle.y + MAP_VIEW_DISTANCE) {
-			iterator.y = 0;
-			iterator.x++;
+		// if the chunk wasn't in the previous bounds, generate it
+		Chunk* chunk = new Chunk(it);
+		
+		// iterate one more time for the next call
+		it.z++;
+		if (it.z > middle.z + MAP_VIEW_DISTANCE) {
+			it.z = middle.z - MAP_VIEW_DISTANCE;
+			it.y++;
 		}
 		
-		if (iterator.x > middle.x + MAP_VIEW_DISTANCE) return 0;
+		if (it.y > middle.y + MAP_VIEW_DISTANCE) {
+			it.y = middle.y - MAP_VIEW_DISTANCE;
+			it.x++;
+		}
+		
+		if (it.x > middle.x + MAP_VIEW_DISTANCE) return 0;
 	
 		return (void*)chunk;
 	}
 
 	void ChunkAllocator::set_middle (const vec3i& middle) {
+		this->previous = this->middle;
 		this->middle = middle;
-		this->iterator = middle - MAP_VIEW_DISTANCE;
+		this->it = middle - MAP_VIEW_DISTANCE;
 	}
 
 
@@ -113,6 +149,11 @@ namespace Map {
 	ChunkUploader::ChunkUploader ()
 		: tbb::thread_bound_filter (tbb::filter::serial_out_of_order),
 		  parent (0) {
+			vec3i it;
+			for (int x = 0; x < 2 * MAP_VIEW_DISTANCE + 1; x++)
+				for (int y = 0; y < 2 * MAP_VIEW_DISTANCE + 1; y++)
+					for (int z = 0; z < 2 * MAP_VIEW_DISTANCE + 1; z++)
+						buffer[x][y][z] = 0;
 	}
 
 	void* ChunkUploader::operator() (void* ptr) {
@@ -122,15 +163,14 @@ namespace Map {
 		std::stringstream name ("chunk");
 		name << chunk->position;
 	
-		std::cout << "uploading " << chunk->position << std::endl;
+		//std::cout << "uploading " << chunk->position << std::endl;
 	
 		H3DRes geometry = h3dAddResource(chunk->block->type, name.str().c_str(), 0);
 		if (geometry) h3dLoadResource(geometry, chunk->block->data, chunk->block->size);
 
 		chunk->node = h3dAddModelNode(parent, name.str().c_str(), geometry);
 		
-		chunk->position *= chunk_size;
-		h3dSetNodeTransform(chunk->node, chunk->position.x, chunk->position.y, chunk->position.z, 0, 0, 0, 1, 1, 1);
+		h3dSetNodeTransform(chunk->node, chunk->position.x * chunk_size.x, chunk->position.y * chunk_size.y, chunk->position.z * chunk_size.z, 0, 0, 0, 1, 1, 1);
 	
 		H3DRes material = h3dAddResource(H3DResTypes::Material, "materials/mine.material.xml", 0);
 		h3dAddMeshNode(chunk->node, "DynGeoMesh", material, 0, chunk->elements_count, 0, chunk->vertices_count - 1);
@@ -139,6 +179,11 @@ namespace Map {
 	
 		delete[] chunk->block; // TODO check leak
 		delete chunk;
+
+		// finally, replace in the buffer
+		//H3DNode old = buffer[chunk->position.x][chunk->position.y][chunk->position.z];
+		//if (old != 0) h3dRemoveNode(old); // can be removed after initialization
+		//buffer[chunk->position.x][chunk->position.y][chunk->position.z] = chunk->node;
 
 		return 0;
 	}
