@@ -37,6 +37,13 @@ namespace Map {
 	const vec3i chunk_size (10, 10, 10);
 	
 	/* fonctors */
+
+	/* ChunkAllocator
+	 * 
+	 * Initialized with a map position
+	 * Generate 'Chunk' objects which distance to 'middle' is
+	 * less or equal to MAP_VIEW_DISTANCE */
+
 	class ChunkAllocator : public tbb::filter {
 	public:
 		ChunkAllocator ();
@@ -48,12 +55,25 @@ namespace Map {
 		vec3i it;
 	};
 
+	/* ChunkTriangulator
+	 *
+	 * Take a Chunk and generate the vertices / triangles
+	 * associated to it in a geometry blob ready to be uploaded
+	 * into H3D */
+
 	class ChunkTriangulator : public tbb::filter {
 	public:
 		ChunkTriangulator ();
 		void* operator() (void* chunk);
 	};
 	
+	/* ChunkUploader
+	 *
+	 * Create a resource from a chunk geometry raw-data
+	 * upload it to H3D (then to OpenGL)
+	 * Create the 'model' object associated to the chunk
+	 * CAUTION: operator() must be executed in the main thread ! */
+
 	class ChunkUploader : public tbb::thread_bound_filter {
 	public:
 		ChunkUploader ();
@@ -69,9 +89,6 @@ namespace Map {
 				2 * MAP_VIEW_DISTANCE + 1>,
 			2 * MAP_VIEW_DISTANCE + 1> buffer;
 	};
-	
-	/* globals */
-	extern ChunkUploader chunk_uploader;
 		
 	/* functions */
 	void update (const vec3i&, tbb::concurrent_bounded_queue<vec3i>& queue);

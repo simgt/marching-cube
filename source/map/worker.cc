@@ -50,6 +50,9 @@ namespace Map {
 	 * FILTERS *
 	 * ======= */
 
+
+	/* ChunkAllocator */
+
 	ChunkAllocator::ChunkAllocator ()
 		: tbb::filter (tbb::filter::parallel),
 		  middle (1 << 15), // TODO FIX THIS SHIT !!
@@ -101,6 +104,7 @@ namespace Map {
 		this->it = middle - MAP_VIEW_DISTANCE;
 	}
 
+	/* ChunkTriangulator */
 
 	ChunkTriangulator::ChunkTriangulator ()
 		: tbb::filter (tbb::filter::parallel) {
@@ -142,9 +146,7 @@ namespace Map {
 		return ptr;
 	}
 
-	/* In main thread:
-	 * chunk_uploader.try_process_item();
-	 */
+	/* ChunkUploader */
 
 	ChunkUploader::ChunkUploader ()
 		: tbb::thread_bound_filter (tbb::filter::serial_out_of_order),

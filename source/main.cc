@@ -9,7 +9,7 @@
 #include <string>
 
 
-#define WIN_W 800
+#define WIN_W 1024
 #define WIN_H 600
 
 #define CAMERA_T_SPEED 10.0f
