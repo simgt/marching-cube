@@ -1,6 +1,6 @@
 CC = clang++
 CFLAGS = -W -Wall -O0 -std=c++0x \
-		-Isrc -I/opt/local/include \
+		-Isource -I/opt/local/include \
 		$(addprefix -I, /Library/Frameworks/Horde3D.framework/Headers /Library/Frameworks/Horde3DUtils.framework/Headers)
 LDFLAGS = -lglfw -ltbb \
 		$(addprefix -framework , Horde3D Horde3DUtils OpenGL Cocoa)
