@@ -28,70 +28,6 @@ struct {
 	vec3f orientation;
 } camera = {0, vec3f(0, 5, 0), vec3f(0)};
 
-/*template <typename T, uint S>
-struct circular_array {
-	T data[S];
-
-	circular_array () {
-	};
-	
-	circular_array (T v) {
-		for (uint i = 0; i < S; i++)
-			data[i] = v;
-	};
-
-	T& operator[] (int i) {
-		return data[i >= 0 ? i % S : (S - (-i % S)) % S];
-	};
-	
-	const T& operator[] (int i) const {
-		return data[i >= 0 ? i % S : (S - (-i % S)) % S];
-	};
-	
-	//offset = m >= 0 ? (offset + m) % 8 : (offset + 8 - (-m % 8)) % 8;
-};*/
-
-/*
- * TODO
- * add thread-generated data to the map, must be freed when uploaded
- */
-
-/*#define VIEW_DISTANCE 5
-#define MAP_SIZE (VIEW_DISTANCE * 2 + 1)
-struct map_t {
-	vec3i middle;
-	circular_array<circular_array<circular_array<H3DNode, VIEW_DISTANCE * 2 + 1>, VIEW_DISTANCE * 2 + 1>, VIEW_DISTANCE * 2 + 1> data;
-	
-	map_t ()
-		: middle (-50) {
-		vec3i it;
-		for (it.x = 0; it.x < MAP_SIZE; it.x++)
-			for (it.y = 0; it.y < MAP_SIZE; it.y++)
-				for (it.z = 0; it.z <= MAP_SIZE; it.z++)
-					data[it.x][it.y][it.z] = 0;
-	};
-	
-	void move (const vec3i& p) {
-		if (middle == p) return;
-		
-		std::cout << middle << " --> " << p << std::endl;
-		
-		vec3i it;
-		for (it.x = p.x - VIEW_DISTANCE; it.x <= p.x + VIEW_DISTANCE; it.x++)
-			for (it.y = p.y - VIEW_DISTANCE; it.y <= p.y + VIEW_DISTANCE; it.y++)
-				for (it.z = p.z - VIEW_DISTANCE; it.z <= p.z + VIEW_DISTANCE; it.z++) {
-					if (it.x < middle.x - VIEW_DISTANCE || it.y < middle.y - VIEW_DISTANCE || it.z < middle.z - VIEW_DISTANCE
-					 || it.x > middle.x + VIEW_DISTANCE || it.y > middle.y + VIEW_DISTANCE || it.z > middle.z + VIEW_DISTANCE) { // outside previous bounds
-						if (data[it.x][it.y][it.z] != 0) h3dRemoveNode(data[it.x][it.y][it.z]); // can be removed after initialization
-						data[it.x][it.y][it.z] = Map::worker(world, it);
-					}
-				}
-		
-		middle = p;
-	}
-	//offset = m >= 0 ? (offset + m) % 8 : (offset + 8 - (-m % 8)) % 8;
-};*/
-
 // events
 
 tbb::concurrent_bounded_queue<vec3i> chunks_queue;
@@ -210,7 +146,7 @@ int main() {
 		// Increase animation time
 	    double t = delay();
 
-		Map::chunk_uploader.try_process_item(); // upload at most one chunk per round
+		Map::update(floor(camera.position / Map::chunk_size), chunks_queue);
 
 		// HUD
 		//h3dutShowText("0.01a", 0.01, 0.01, 0.03f, 1, 1, 1, font_tex);

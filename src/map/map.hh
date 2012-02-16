@@ -4,6 +4,7 @@
 #include <global.hh>
 #include <util/math.hh>
 #include <util/h3d.hh>
+#include <util/algorithm.hh>
 
 #include <tbb/pipeline.h>
 #include <tbb/concurrent_queue.h>
@@ -14,7 +15,7 @@
 
 #include <vector>
 
-#define MAP_VIEW_DISTANCE 	5
+#define MAP_VIEW_DISTANCE 20
 #define MAP_VIEW_AREA (2 * MAP_VIEW_DISTANCE + 1) * (2 * MAP_VIEW_DISTANCE + 1) * (2 * MAP_VIEW_DISTANCE + 1)
 
 namespace Map {
@@ -42,7 +43,8 @@ namespace Map {
 		void set_middle (const vec3i& middle);
 	private:
 		vec3i middle;
-		vec3i iterator;
+		vec3i previous;
+		vec3i it;
 	};
 
 	class ChunkTriangulator : public tbb::filter {
@@ -58,12 +60,20 @@ namespace Map {
 		void set_parent (const H3DNode parent);
 	private:
 		H3DNode parent;
+		circular_array<
+			circular_array<
+				circular_array<
+					H3DNode,
+					2 * MAP_VIEW_DISTANCE + 1>,
+				2 * MAP_VIEW_DISTANCE + 1>,
+			2 * MAP_VIEW_DISTANCE + 1> buffer;
 	};
 	
 	/* globals */
 	extern ChunkUploader chunk_uploader;
 		
 	/* functions */
+	void update (const vec3i&, tbb::concurrent_bounded_queue<vec3i>& queue);
 	std::thread* launch_worker (H3DNode parent, tbb::concurrent_bounded_queue<vec3i>* queue);
 	void marching_cube (const vec3i offset, std::vector<vec3f>& positions, std::vector<vec3f>& normals, std::vector<uint>& triangles);
 }
