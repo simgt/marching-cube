@@ -14,7 +14,7 @@
 
 #include "map.hh"
 
-#include <stdlib.h>
+#include <cstring>
 
 extern const int edge_table[256];
 extern const int tri_table[256][16];
@@ -55,15 +55,6 @@ vec3f linear (unsigned char a, float va, unsigned char b, float vb) {
 
 // memo
 
-float density (const vec3f p) {
-	/*x -= p.x;
-	y -= p.y;
-	z -= p.z;*/
-	return p.x * p.x + 17 * p.y - p.z * p.z; // TODO: take sphere position into account
-	//return p.length() - 15;
-	//return p.y;
-}
-
 // TODO: remove
 struct edge_plane {
 	int* oy; // vertical edges
@@ -72,8 +63,8 @@ struct edge_plane {
 
 // marching cube
 
-void Map::marching_cube (const vec3i offset, // input
-					std::vector<vec3f>& positions, std::vector<vec3f>& normals, std::vector<uint>& triangles) { // output
+void Map::marching_cube (const chunk_raw_data_t& grid, // input
+						 std::vector<vec3f>& positions, std::vector<vec3f>& normals, std::vector<uint>& triangles) { // output
 	const uchar edg[12][2] = {
 		/*  0 */ {0, 1},
 		/*  1 */ {1, 2},
@@ -90,55 +81,48 @@ void Map::marching_cube (const vec3i offset, // input
 	};
 	
 	uint disc = 0; // discarded triangles
-	
-	// temp
-	float grid[Map::chunk_size.x + 1][Map::chunk_size.y + 1][Map::chunk_size.z + 1];
-	for (int i = 0; i < Map::chunk_size.x + 1; i++)  		 //x axis
-		for (int j = 0; j < Map::chunk_size.y + 1; j++)		 //y axis
-			for (int k = 0; k < Map::chunk_size.z + 1; k++) //z axis
-				grid[i][j][k] = density(vec3f(offset.x + i, offset.y + j, offset.z + k));
 
 	// X-axis memoization (YZ plane)
 	edge_plane memo_x = {
-		(int*)alloca((Map::chunk_size.y + 1) * Map::chunk_size.z * sizeof(int)),
-		(int*)alloca(Map::chunk_size.y * (Map::chunk_size.z + 1) * sizeof(int))
+		(int*)alloca((MAP_CHUNK_SIZE_Y + 1) * MAP_CHUNK_SIZE_Z * sizeof(int)),
+		(int*)alloca(MAP_CHUNK_SIZE_Y * (MAP_CHUNK_SIZE_Z + 1) * sizeof(int))
 	};
 
-	std::memset(memo_x.oy, -1, (Map::chunk_size.y + 1) * Map::chunk_size.z * sizeof(int));
-	std::memset(memo_x.oz, -1, Map::chunk_size.y * (Map::chunk_size.z + 1) * sizeof(int));
+	std::memset(memo_x.oy, -1, (MAP_CHUNK_SIZE_Y + 1) * MAP_CHUNK_SIZE_Z * sizeof(int));
+	std::memset(memo_x.oz, -1, MAP_CHUNK_SIZE_Y * (MAP_CHUNK_SIZE_Z + 1) * sizeof(int));
 	
 	// X-AXIS
-	for (int i = 0; i < Map::chunk_size.x; i++) { 		//x axis
+	for (int i = 0; i < MAP_CHUNK_SIZE_X; i++) { 		//x axis
 		// X-axis memoization (YZ plane)
 		edge_plane next_x = {
-			(int*)alloca((Map::chunk_size.y + 1) * Map::chunk_size.z * sizeof(int)),
-			(int*)alloca(Map::chunk_size.y * (Map::chunk_size.z + 1) * sizeof(int))
+			(int*)alloca((MAP_CHUNK_SIZE_Y + 1) * MAP_CHUNK_SIZE_Z * sizeof(int)),
+			(int*)alloca(MAP_CHUNK_SIZE_Y * (MAP_CHUNK_SIZE_Z + 1) * sizeof(int))
 		};
 
-		std::memset(next_x.oy, -1, (Map::chunk_size.y + 1) * Map::chunk_size.z * sizeof(int));
-		std::memset(next_x.oz, -1, Map::chunk_size.y * (Map::chunk_size.z + 1) * sizeof(int));
+		std::memset(next_x.oy, -1, (MAP_CHUNK_SIZE_Y + 1) * MAP_CHUNK_SIZE_Z * sizeof(int));
+		std::memset(next_x.oz, -1, MAP_CHUNK_SIZE_Y * (MAP_CHUNK_SIZE_Z + 1) * sizeof(int));
 		
 		// Y-axis memoization: indexes of the previous z-line
-		int memo_y[3 * Map::chunk_size.y + 1]; // TODO: check if not 3 * Y + 1 ???
-		std::memset(memo_y, -1, (3 * Map::chunk_size.y + 1) * sizeof(int));
+		int memo_y[3 * MAP_CHUNK_SIZE_Y + 1]; // TODO: check if not 3 * Y + 1 ???
+		std::memset(memo_y, -1, (3 * MAP_CHUNK_SIZE_Y + 1) * sizeof(int));
 
 		// Y-AXIS
-		for (int j = 0; j < Map::chunk_size.y; j++) {
+		for (int j = 0; j < MAP_CHUNK_SIZE_Y; j++) {
 			// memoization: indexes of the previous z-line
-			int next_y[3 * Map::chunk_size.y + 1];
-			std::memset(next_y, -1, (3 * Map::chunk_size.y + 1) * sizeof(int));
+			int next_y[3 * MAP_CHUNK_SIZE_Y + 1];
+			std::memset(next_y, -1, (3 * MAP_CHUNK_SIZE_Y + 1) * sizeof(int));
 
 			//z axis
-			for (int k = 0; k < Map::chunk_size.z; k++) {
+			for (int k = 0; k < MAP_CHUNK_SIZE_Z; k++) {
 				float val[8] = { // fetch the value of the eight vertices of the cube
-					grid[i    ][j    ][k    ],
-					grid[i + 1][j    ][k    ],
-					grid[i + 1][j    ][k + 1],
-					grid[i    ][j    ][k + 1],
-					grid[i    ][j + 1][k    ],
-					grid[i + 1][j + 1][k    ],
-					grid[i + 1][j + 1][k + 1],
-					grid[i    ][j + 1][k + 1] 
+					grid(i    , j    , k    ),
+					grid(i + 1, j    , k    ),
+					grid(i + 1, j    , k + 1),
+					grid(i    , j    , k + 1),
+					grid(i    , j + 1, k    ),
+					grid(i + 1, j + 1, k    ),
+					grid(i + 1, j + 1, k + 1),
+					grid(i    , j + 1, k + 1) 
 				};
 				
 				// get the index representing the cube's vertices configuration
@@ -152,17 +136,17 @@ void Map::marching_cube (const vec3i offset, // input
 				// retrieve indexes in the vertices array of the previously built vertices from the memoization register
 				int memo_cube[12] = {
 					/*  0 */ memo_y[3 * k],
-					/*  1 */ next_x.oz[j * Map::chunk_size.z + k], //
+					/*  1 */ next_x.oz[j * MAP_CHUNK_SIZE_Z + k], //
 					/*  2 */ memo_y[3 * k + 3],
-					/*  3 */ memo_x.oz[j * Map::chunk_size.z + k],
+					/*  3 */ memo_x.oz[j * MAP_CHUNK_SIZE_Z + k],
 					/*  4 */ next_y[3 * k],
 					/*  5 */ -1,
 					/*  6 */ -1,
-					/*  7 */ memo_x.oz[(j + 1) * Map::chunk_size.z + k],
-					/*  8 */ memo_x.oy[j * (Map::chunk_size.z - 1) + k], // BUG
-					/*  9 */ next_x.oy[j * (Map::chunk_size.z - 1) + k], // BUG
+					/*  7 */ memo_x.oz[(j + 1) * MAP_CHUNK_SIZE_Z + k],
+					/*  8 */ memo_x.oy[j * (MAP_CHUNK_SIZE_Z - 1) + k], // BUG
+					/*  9 */ next_x.oy[j * (MAP_CHUNK_SIZE_Z - 1) + k], // BUG
 					/* 10 */ -1,
-					/* 11 */ memo_x.oy[j * (Map::chunk_size.z - 1) + k + 1] // BUG
+					/* 11 */ memo_x.oy[j * (MAP_CHUNK_SIZE_Z - 1) + k + 1] // BUG
 				};
 
 				// get the origin corner of the cube
@@ -226,24 +210,24 @@ void Map::marching_cube (const vec3i offset, // input
 				
 				// save current cube into memoization registers
 				/*  0 */ memo_y[3 * k] = memo_cube[0];
-				/*  1 */ next_x.oz[j * Map::chunk_size.z + k] = memo_cube[1];
+				/*  1 */ next_x.oz[j * MAP_CHUNK_SIZE_Z + k] = memo_cube[1];
 				/*  2 */ memo_y[3 * k + 3] = memo_cube[2];
-				/*  3 */ memo_x.oz[j * Map::chunk_size.z + k] = memo_cube[3];
+				/*  3 */ memo_x.oz[j * MAP_CHUNK_SIZE_Z + k] = memo_cube[3];
 				/*  4 */ next_y[3 * k] = memo_cube[4];
-				/*  5 */ next_x.oz[(j + 1) * Map::chunk_size.z + k] = next_y[3 * k + 1] = memo_cube[5]; //
+				/*  5 */ next_x.oz[(j + 1) * MAP_CHUNK_SIZE_Z + k] = next_y[3 * k + 1] = memo_cube[5]; //
 				/*  6 */ next_y[3 * k + 3] = memo_cube[6];
-				/*  7 */ next_y[3 * k + 2] = memo_x.oz[(j + 1) * Map::chunk_size.z + k] = memo_cube[7]; //
-				/*  8 */ memo_x.oy[j * (Map::chunk_size.z - 1) + k] = memo_cube[8];
-				/*  9 */ next_x.oy[j * (Map::chunk_size.z - 1) + k] = memo_cube[9];
-				/* 10 */ next_x.oy[j * (Map::chunk_size.z - 1) + k + 1] = memo_cube[10];
-				/* 11 */ memo_x.oy[j * (Map::chunk_size.z - 1) + k + 1] = memo_cube[11];
+				/*  7 */ next_y[3 * k + 2] = memo_x.oz[(j + 1) * MAP_CHUNK_SIZE_Z + k] = memo_cube[7]; //
+				/*  8 */ memo_x.oy[j * (MAP_CHUNK_SIZE_Z - 1) + k] = memo_cube[8];
+				/*  9 */ next_x.oy[j * (MAP_CHUNK_SIZE_Z - 1) + k] = memo_cube[9];
+				/* 10 */ next_x.oy[j * (MAP_CHUNK_SIZE_Z - 1) + k + 1] = memo_cube[10];
+				/* 11 */ memo_x.oy[j * (MAP_CHUNK_SIZE_Z - 1) + k + 1] = memo_cube[11];
 			} // end of Z-loop
 
-			std::memcpy(memo_y, next_y, (3 * Map::chunk_size.y + 1) * sizeof(int));
+			std::memcpy(memo_y, next_y, (3 * MAP_CHUNK_SIZE_Y + 1) * sizeof(int));
 		} // end of Y-loop
 
-		std::memcpy(memo_x.oy, next_x.oy, (Map::chunk_size.y + 1) * Map::chunk_size.z * sizeof(int));
-		std::memcpy(memo_x.oz, next_x.oz, Map::chunk_size.y * (Map::chunk_size.z + 1) * sizeof(int));
+		std::memcpy(memo_x.oy, next_x.oy, (MAP_CHUNK_SIZE_Y + 1) * MAP_CHUNK_SIZE_Z * sizeof(int));
+		std::memcpy(memo_x.oz, next_x.oz, MAP_CHUNK_SIZE_Y * (MAP_CHUNK_SIZE_Z + 1) * sizeof(int));
 	} // end of X-loop
 	
 	// set normals length to 1.0

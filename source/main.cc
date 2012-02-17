@@ -45,10 +45,6 @@ void keyboard_listener (int key, int state) {
 			h3dSetOption(H3DOptions::WireframeMode, false);
 			h3dSetOption(H3DOptions::DebugViewMode, !h3dGetOption(H3DOptions::DebugViewMode));
 			break;
-		case GLFW_KEY_SPACE:
-			chunks_queue.push(floor(camera.position / Map::chunk_size));
-			std::cout << "Pushed " << floor(camera.position / Map::chunk_size) << std::endl;
-			break;
 	}
 }
 
@@ -146,7 +142,7 @@ int main() {
 		// Increase animation time
 	    double t = delay();
 
-		Map::update(floor(camera.position / Map::chunk_size), chunks_queue);
+		Map::update(camera.position, chunks_queue);
 
 		// HUD
 		//h3dutShowText("0.01a", 0.01, 0.01, 0.03f, 1, 1, 1, font_tex);

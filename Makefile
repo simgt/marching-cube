@@ -1,6 +1,8 @@
-CC = clang++
-CFLAGS = -W -Wall -O0 -std=c++0x \
-		-Isource -I/opt/local/include \
+CC = g++-mp-4.7
+#CC = clang++ -std=c++0x
+CFLAGS = -W -Wall -O0 -std=c++11 \
+		-DTBB_IMPLEMENT_CPP0X=1 \
+		-Isource -I/opt/local/include -I/usr/local/include \
 		$(addprefix -I, /Library/Frameworks/Horde3D.framework/Headers /Library/Frameworks/Horde3DUtils.framework/Headers)
 LDFLAGS = -lglfw -ltbb \
 		$(addprefix -framework , Horde3D Horde3DUtils OpenGL Cocoa)
