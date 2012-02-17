@@ -1,16 +1,6 @@
-- remove cursor
-- free-fly camera
-- print object under mouse (center of the screen)
-- retrieve model-space intersection
-- show frame-rate and others informations on screen
+* précharger les valeurs du Chunk dans un filtre du pipeline
+* corriger bug génération de certains chunks
+* modifier format valeurs des voxels: uchar, 255: plein (dans la surface), 0: vide (hors de la surface)
+* format de stockage endian-independent
 
-* marching cube for the sphere equation
-* per-vertex normals
-
-* retrieve meshes informations
-* generate a flat terrain on the fly
-* add a ball under the cursor when colliding with the terrain
-* retrieve vertices in a defined radius around the intersection
-* modify meshes (digging)
-
-* do the "OPTIM"s
+* OPTIM, TODO

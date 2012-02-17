@@ -1,5 +1,7 @@
 #include "h3d.hh"
 
+#include <cstring>
+
 ResourceBlock* create_geometry_data (
 	int numVertices, int numTriangleIndices,
 	float *posData, 
@@ -91,7 +93,7 @@ ResourceBlock* create_geometry_data (
 	// set vertex stream element size
 	*( (uint32 *)pData ) = sizeof( float ) * 3; pData += sizeof( uint32 );
 	// vertex data
-	memcpy( (float*) pData, posData, numVertices * sizeof( float ) * 3 );
+	std::memcpy( (float*) pData, posData, numVertices * sizeof( float ) * 3 );
 	pData += numVertices * sizeof( float ) * 3;
 
 	if( normalData )
@@ -101,7 +103,7 @@ ResourceBlock* create_geometry_data (
 		// set normal stream element size
 		*( (uint32 *)pData ) = sizeof( short ) * 3; pData += sizeof( uint32 );
 		// normal data
-		memcpy( (short*) pData, normalData, numVertices * sizeof( short ) * 3 );
+		std::memcpy( (short*) pData, normalData, numVertices * sizeof( short ) * 3 );
 		pData += numVertices * sizeof( short ) * 3;
 	}
 
@@ -112,7 +114,7 @@ ResourceBlock* create_geometry_data (
 		// set tangent stream element size
 		*( (uint32 *)pData ) = sizeof( short ) * 3; pData += sizeof( uint32 );
 		// tangent data
-		memcpy( (short*) pData, tangentData, numVertices * sizeof( short ) * 3 );
+		std::memcpy( (short*) pData, tangentData, numVertices * sizeof( short ) * 3 );
 		pData += numVertices * sizeof( short ) * 3;
 	
 		// Bitangent Stream ID
@@ -120,7 +122,7 @@ ResourceBlock* create_geometry_data (
 		// set bitangent stream element size
 		*( (uint32 *)pData ) = sizeof( short ) * 3; pData += sizeof( uint32 );
 		// bitangent data
-		memcpy( (short*) pData, bitangentData, numVertices * sizeof( short ) * 3 );
+		std::memcpy( (short*) pData, bitangentData, numVertices * sizeof( short ) * 3 );
 		pData += numVertices * sizeof( short ) * 3;
 	}
 
@@ -129,14 +131,14 @@ ResourceBlock* create_geometry_data (
 	{
 		*( (uint32 *)pData ) = 6; pData += sizeof( uint32 ); // Tex Set 1
 		*( (uint32 *)pData ) = sizeof( float ) * 2; pData += sizeof( uint32 ); // stream element size
-		memcpy( (float *)pData, texData1, sizeof( float ) * 2 * numVertices ); // stream data
+		std::memcpy( (float *)pData, texData1, sizeof( float ) * 2 * numVertices ); // stream data
 		pData += sizeof( float ) * 2 * numVertices; 
 	}
 	if( texData2 )
 	{
 		*( (uint32 *)pData ) = 7; pData += sizeof( uint32 ); // Tex Set 2
 		*( (uint32 *)pData ) = sizeof( float ) * 2; pData += sizeof( uint32 ); // stream element size
-		memcpy( (float *)pData, texData2, sizeof( float ) * 2 * numVertices ); // stream data
+		std::memcpy( (float *)pData, texData2, sizeof( float ) * 2 * numVertices ); // stream data
 		pData += sizeof( float ) * 2 * numVertices; 
 	}
 
@@ -144,7 +146,7 @@ ResourceBlock* create_geometry_data (
 	*( (uint32 *) pData ) = numTriangleIndices; pData += sizeof( uint32 );	
 	
 	// index data
-	memcpy( pData, indexData, numTriangleIndices * sizeof( uint32 ) );
+	std::memcpy( pData, indexData, numTriangleIndices * sizeof( uint32 ) );
 	pData += numTriangleIndices * sizeof( uint32 );				
 
 	// Set number of morph targets to zero

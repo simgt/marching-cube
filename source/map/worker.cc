@@ -8,6 +8,7 @@
 
 namespace Map {
 	ChunkAllocator chunk_allocator;
+	ChunkGenerator chunk_generator;
 	ChunkTriangulator chunk_triangulator;
 	ChunkUploader chunk_uploader;
 	tbb::pipeline chunk_pipeline;
@@ -23,17 +24,19 @@ namespace Map {
 	}
 	
 	std::thread* launch_worker (H3DNode parent, tbb::concurrent_bounded_queue<vec3i>* queue) {	
-		chunk_pipeline.add_filter(Map::chunk_allocator);
-		chunk_pipeline.add_filter(Map::chunk_triangulator);
-		chunk_pipeline.add_filter(Map::chunk_uploader);
+		chunk_pipeline.add_filter(chunk_allocator);
+		chunk_pipeline.add_filter(chunk_generator);
+		chunk_pipeline.add_filter(chunk_triangulator);
+		chunk_pipeline.add_filter(chunk_uploader);
 		
 		chunk_uploader.set_parent(parent);
 
 		return new std::thread(worker, queue);
 	}
 	
-	void update (const vec3i& p, tbb::concurrent_bounded_queue<vec3i>& queue) {
+	void update (const vec3f& cp, tbb::concurrent_bounded_queue<vec3i>& queue) {
 		static vec3i middle(1 << 15); // TODO FIX THIS SHIT !!
+		vec3i p = floor(cp / vec3i(MAP_CHUNK_SIZE_X, MAP_CHUNK_SIZE_Y, MAP_CHUNK_SIZE_Z));
 
 		for (int i = 0; i < MAP_CHUNKS_PER_ROUND && chunk_uploader.try_process_item() != tbb::thread_bound_filter::end_of_stream; i++)
 			; // upload at most 5 chunks per round
@@ -104,6 +107,36 @@ namespace Map {
 		this->it = middle - MAP_VIEW_DISTANCE;
 	}
 
+
+	/* ChunkGenerator */
+	
+	float density (const vec3f p) {
+		return p.x * p.x + 17 * p.y - p.z * p.z; // TODO: take sphere position into account
+		//return p.length() - 15;
+		//return p.y;
+	}
+	
+	ChunkGenerator::ChunkGenerator ()
+		: tbb::filter (tbb::filter::parallel) {
+	}
+	
+	void* ChunkGenerator::operator() (void* ptr) {
+		Chunk* chunk = (Chunk*)ptr;
+		chunk_raw_data_t* grid = new chunk_raw_data_t;
+		
+		vec3i offset (chunk->position * vec3i(MAP_CHUNK_SIZE_X, MAP_CHUNK_SIZE_Y, MAP_CHUNK_SIZE_Z));
+		
+		for (int i = 0; i < MAP_CHUNK_SIZE_X + 1; i++)  		//x axis
+			for (int j = 0; j < MAP_CHUNK_SIZE_Y + 1; j++)		//y axis
+				for (int k = 0; k < MAP_CHUNK_SIZE_Z + 1; k++) 	//z axis
+					(*grid)(i, j, k) = density(vec3f(offset.x + i, offset.y + j, offset.z + k));
+		
+		chunk->grid = grid;
+		
+		return ptr;
+	}
+
+
 	/* ChunkTriangulator */
 
 	ChunkTriangulator::ChunkTriangulator ()
@@ -118,7 +151,7 @@ namespace Map {
 	
 		// run marching cube algorithm
 		//std::cout << "triangulating " << chunk->position << std::endl;
-		Map::marching_cube(chunk->position * chunk_size, positions, normals, elements);
+		Map::marching_cube(*chunk->grid, positions, normals, elements);
 	
 		if (positions.size() == 0 || elements.size() == 0) {
 			delete chunk;
@@ -146,6 +179,7 @@ namespace Map {
 		return ptr;
 	}
 
+
 	/* ChunkUploader */
 
 	ChunkUploader::ChunkUploader ()
@@ -172,7 +206,13 @@ namespace Map {
 
 		chunk->node = h3dAddModelNode(parent, name.str().c_str(), geometry);
 		
-		h3dSetNodeTransform(chunk->node, chunk->position.x * chunk_size.x, chunk->position.y * chunk_size.y, chunk->position.z * chunk_size.z, 0, 0, 0, 1, 1, 1);
+		h3dSetNodeTransform(
+			chunk->node,
+			chunk->position.x * MAP_CHUNK_SIZE_X,
+			chunk->position.y * MAP_CHUNK_SIZE_Y,
+			chunk->position.z * MAP_CHUNK_SIZE_Z,
+			0, 0, 0, 1, 1, 1
+		);
 	
 		H3DRes material = h3dAddResource(H3DResTypes::Material, "materials/mine.material.xml", 0);
 		h3dAddMeshNode(chunk->node, "DynGeoMesh", material, 0, chunk->elements_count, 0, chunk->vertices_count - 1);

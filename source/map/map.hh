@@ -19,10 +19,17 @@
 #define MAP_VIEW_AREA (2 * MAP_VIEW_DISTANCE + 1) * (2 * MAP_VIEW_DISTANCE + 1) * (2 * MAP_VIEW_DISTANCE + 1)
 #define MAP_CHUNKS_PER_ROUND 10
 
+#define MAP_CHUNK_SIZE_X 10
+#define MAP_CHUNK_SIZE_Y 10
+#define MAP_CHUNK_SIZE_Z 10
+
 namespace Map {
 	/* types */
+	typedef array3<float, MAP_CHUNK_SIZE_X + 1, MAP_CHUNK_SIZE_Y + 1, MAP_CHUNK_SIZE_Z + 1> chunk_raw_data_t;
+	
 	struct Chunk {
 		vec3i position;
+		chunk_raw_data_t* grid;
 		uint vertices_count;
 		uint elements_count;
 		ResourceBlock* block;
@@ -32,9 +39,6 @@ namespace Map {
 			: position (position) {
 		};
 	};
-	
-	/* constants */
-	const vec3i chunk_size (10, 10, 10);
 	
 	/* fonctors */
 
@@ -53,6 +57,16 @@ namespace Map {
 		vec3i middle;
 		vec3i previous;
 		vec3i it;
+	};
+
+	/* ChunkGenerator
+	 * 
+	 *  */
+
+	class ChunkGenerator : public tbb::filter {
+	public:
+		ChunkGenerator ();
+		void* operator() (void*);
 	};
 
 	/* ChunkTriangulator
@@ -91,9 +105,10 @@ namespace Map {
 	};
 		
 	/* functions */
-	void update (const vec3i&, tbb::concurrent_bounded_queue<vec3i>& queue);
+	void update (const vec3f&, tbb::concurrent_bounded_queue<vec3i>& queue);
 	std::thread* launch_worker (H3DNode parent, tbb::concurrent_bounded_queue<vec3i>* queue);
-	void marching_cube (const vec3i offset, std::vector<vec3f>& positions, std::vector<vec3f>& normals, std::vector<uint>& triangles);
+	void marching_cube (const chunk_raw_data_t& grid,
+						std::vector<vec3f>& positions, std::vector<vec3f>& normals, std::vector<uint>& triangles);
 }
 
 #endif
