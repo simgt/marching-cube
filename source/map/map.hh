@@ -25,7 +25,7 @@
 
 namespace Map {
 	/* types */
-	typedef array3<float, MAP_CHUNK_SIZE_X + 1, MAP_CHUNK_SIZE_Y + 1, MAP_CHUNK_SIZE_Z + 1> chunk_raw_data_t;
+	typedef array3<uchar, MAP_CHUNK_SIZE_X + 1, MAP_CHUNK_SIZE_Y + 1, MAP_CHUNK_SIZE_Z + 1> chunk_raw_data_t;
 	
 	struct Chunk {
 		vec3i position;
