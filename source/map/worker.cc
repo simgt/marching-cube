@@ -110,10 +110,11 @@ namespace Map {
 
 	/* ChunkGenerator */
 	
-	float density (const vec3f p) {
-		return p.x * p.x + 17 * p.y - p.z * p.z; // TODO: take sphere position into account
+	uchar density (const vec3f p) {
 		//return p.length() - 15;
-		//return p.y;
+		//return p.x * p.x + 17 * p.y - p.z * p.z;
+		//return p.y <= 0 ? 255 : 0;
+		return p.length() <= 20 ? 255 : 0;
 	}
 	
 	ChunkGenerator::ChunkGenerator ()
@@ -129,7 +130,7 @@ namespace Map {
 		for (int i = 0; i < MAP_CHUNK_SIZE_X + 1; i++)  		//x axis
 			for (int j = 0; j < MAP_CHUNK_SIZE_Y + 1; j++)		//y axis
 				for (int k = 0; k < MAP_CHUNK_SIZE_Z + 1; k++) 	//z axis
-					(*grid)(i, j, k) = density(vec3f(offset.x + i, offset.y + j, offset.z + k));
+					(*grid)(i, j, k) = density(vec3i(offset.x + i, offset.y + j, offset.z + k));
 		
 		chunk->grid = grid;
 		
