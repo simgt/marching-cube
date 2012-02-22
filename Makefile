@@ -9,7 +9,7 @@ LDFLAGS = -lglfw -ltbb \
 
 BIN = build/sculpt
 SRC = main.cc util/h3d.cc \
-	  map/worker.cc map/marching_cube.cc
+	  map/worker.cc map/marching_cube.cc map/pipeline.cc
 
 ## compile ##
 
