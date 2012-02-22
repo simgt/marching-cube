@@ -134,7 +134,7 @@ int main() {
 	//H3DRes panel_material2 = h3dAddResource(H3DResTypes::Material, "overlays/panel.material.xml", 0);
 	
 	// MAP
-	std::thread* map_worker = Map::launch_worker(world, &chunks_queue);
+	Map map (world);
 	
 	// MAIN LOOP
 	
@@ -142,7 +142,7 @@ int main() {
 		// Increase animation time
 	    double t = delay();
 
-		Map::update(camera.position, chunks_queue);
+		map.update(camera.position);
 
 		// HUD
 		//h3dutShowText("0.01a", 0.01, 0.01, 0.03f, 1, 1, 1, font_tex);

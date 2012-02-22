@@ -1,5 +1,4 @@
-* corriger bug lors génération de certains chunks
-* modifier format valeurs des voxels: uchar, 255: plein (dans la surface), 0: vide (hors de la surface)
+* corriger le bug lors génération de certains chunks (non générés)
 * format de stockage endian-independent
 
 * OPTIM, TODO

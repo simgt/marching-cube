@@ -50,7 +50,24 @@ vec3f linear (unsigned char a, uchar va, unsigned char b, uchar vb) {
 	};
 	
 	assert(a != b);
-	return cube[a] + (cube[b] - cube[a]) / ((vb - va) / 255.0) * (ISOLEVEL - va / 255.0);
+	// return a + (ISOLEVEL - va) * (b - a) / (vb - va);
+	return cube[a] + (cube[b] - cube[a]) / (vb - va) * (ISOLEVEL - va);
+}
+
+vec3f mid (uchar a, uchar va, uchar b, uchar vb) {
+	const vec3f cube[8] = {
+		vec3f(0, 0, 0),
+		vec3f(1, 0, 0),
+		vec3f(1, 0, 1),
+		vec3f(0, 0, 1),
+		vec3f(0, 1, 0),
+		vec3f(1, 1, 0),
+		vec3f(1, 1, 1),
+		vec3f(0, 1, 1)
+	};
+	assert(a != b);
+	return (cube[a] + cube[b]) / 2
+		 + (cube[b] - cube[a]) / 2 * (vb - va) / 255.0;
 }
 
 // memo
@@ -63,8 +80,10 @@ struct edge_plane {
 
 // marching cube
 
-void Map::marching_cube (const chunk_raw_data_t& grid, // input
-						 std::vector<vec3f>& positions, std::vector<vec3f>& normals, std::vector<uint>& triangles) { // output
+void marching_cube (const Chunk::raw_data_t& grid, // input
+						 std::vector<vec3f>& positions,
+						 std::vector<vec3f>& normals,
+						 std::vector<uint>& triangles) { // output
 	const uchar edg[12][2] = {
 		/*  0 */ {0, 1},
 		/*  1 */ {1, 2},
@@ -128,7 +147,8 @@ void Map::marching_cube (const chunk_raw_data_t& grid, // input
 				// get the index representing the cube's vertices configuration
 				uchar index = 0;
 				for (int n = 0; n < 8; n++)
-					if (val[n] > 0) index |= (1 << n); // set nth bit to 1
+					if (val[n] > ISOLEVEL) index |= (1 << n); // set nth bit to 1
+				// TODO: compute the correct index (0 < val < 255), val[a] != val[b] where
 
 				//check if the cube is completely inside or outside the volume
 				if (edge_table[index] == 0 || edge_table[index] == 0xff) continue;
@@ -162,7 +182,7 @@ void Map::marching_cube (const chunk_raw_data_t& grid, // input
 						// check if the vertex has already been created
 						// create it and save it to the register if not
 						if (memo_cube[e] == -1) { // not memoized
-							vec3f position = origin + middle(edg[e][0], edg[e][1]);//middle(edg[e][0], val[edg[e][0]], edg[e][1], val[edg[e][1]]);
+							vec3f position = origin + linear(edg[e][0], val[edg[e][0]], edg[e][1], val[edg[e][1]]); //middle(edg[e][0], edg[e][1]);
 							
 							// check if the interpolation has not already produced a vertex at this position
 							/*for (int i = 0; i < 12; i++)
