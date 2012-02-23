@@ -4,10 +4,27 @@
 #include <sstream>
 #include <algorithm>
 
+/* ChunkPayload
+ *
+ * Structure built and transmitted through the pipeline */
+
+struct ChunkPayload {
+	vec3i position;
+	chunk_data_array* grid;
+	uint vertices_count;
+	uint elements_count;
+	ResourceBlock* block;
+	H3DNode node;
+
+	ChunkPayload (const vec3i& position)
+		: position (position) {
+	};
+};
+
 /* ChunkAllocator */
 
 ChunkAllocator::ChunkAllocator ()
-	: tbb::filter (tbb::filter::parallel),
+	: tbb::filter (tbb::filter::serial_in_order),
 	  middle (1 << 15), // TODO FIX THIS SHIT !!
 	  previous (0),
 	  it (0 - MAP_VIEW_DISTANCE) {
@@ -15,8 +32,12 @@ ChunkAllocator::ChunkAllocator ()
 
 void* ChunkAllocator::operator() (void*) {
 	// increment 'it' while in the previous bounds
-	while (it.x >= previous.x - MAP_VIEW_DISTANCE && it.y >= previous.y - MAP_VIEW_DISTANCE && it.z >= previous.z - MAP_VIEW_DISTANCE
-	 	&& it.x <= previous.x + MAP_VIEW_DISTANCE && it.y <= previous.y + MAP_VIEW_DISTANCE && it.z <= previous.z + MAP_VIEW_DISTANCE) {
+	while (it.x >= previous.x - MAP_VIEW_DISTANCE
+		&& it.y >= previous.y - MAP_VIEW_DISTANCE
+		&& it.z >= previous.z - MAP_VIEW_DISTANCE
+	 	&& it.x <= previous.x + MAP_VIEW_DISTANCE
+	 	&& it.y <= previous.y + MAP_VIEW_DISTANCE
+	 	&& it.z <= previous.z + MAP_VIEW_DISTANCE) {
 			it.z++;
 			if (it.z > middle.z + MAP_VIEW_DISTANCE) {
 				it.z = middle.z - MAP_VIEW_DISTANCE;
@@ -32,7 +53,7 @@ void* ChunkAllocator::operator() (void*) {
 	}
 	
 	// if the chunk wasn't in the previous bounds, generate it
-	Chunk* chunk = new Chunk(it);
+	ChunkPayload* chunk = new ChunkPayload(it);
 	
 	// iterate one more time for the next call
 	it.z++;
@@ -62,9 +83,10 @@ void ChunkAllocator::set_middle (const vec3i& middle) {
 
 uchar density (const vec3i p) {
 	//return p.length() - 15;
-	//return p.x * p.x + 17 * p.y - p.z * p.z;
-	//return p.y <= 0 ? 255 : 0;
-	return p.length() < 10 ? 255 : 0;
+	/*int v = p.x * p.x + 17 * p.y - p.z * p.z;
+	return v >= 0 ? 0 : 255;*/
+	return p.y <= 0 ? 255 : 0;
+	//return p.length() < 10 ? 255 : 0;
 	/*return -p.y <= 0 ? 0
 		 : -p.y >= 255 ? 255
 		 : -p.y;*/
@@ -75,15 +97,19 @@ ChunkGenerator::ChunkGenerator ()
 }
 
 void* ChunkGenerator::operator() (void* ptr) {
-	Chunk* chunk = (Chunk*)ptr;
-	Chunk::raw_data_t* grid = new Chunk::raw_data_t;
+	ChunkPayload* chunk = (ChunkPayload*)ptr;
+	chunk_data_array* grid = new chunk_data_array;
 	
-	vec3i offset (chunk->position * vec3i(MAP_CHUNK_SIZE_X, MAP_CHUNK_SIZE_Y, MAP_CHUNK_SIZE_Z));
+	vec3i offset (chunk->position * vec3i(MAP_CHUNK_SIZE_X,
+										  MAP_CHUNK_SIZE_Y,
+										  MAP_CHUNK_SIZE_Z));
 	
 	for (int i = 0; i < MAP_CHUNK_SIZE_X + 1; i++)  		//x axis
 		for (int j = 0; j < MAP_CHUNK_SIZE_Y + 1; j++)		//y axis
 			for (int k = 0; k < MAP_CHUNK_SIZE_Z + 1; k++) 	//z axis
-				(*grid)(i, j, k) = density(vec3i(offset.x + i, offset.y + j, offset.z + k));
+				(*grid)(i, j, k) = density(vec3i(offset.x + i,
+												 offset.y + j,
+												 offset.z + k));
 	
 	chunk->grid = grid;
 	
@@ -98,7 +124,7 @@ ChunkTriangulator::ChunkTriangulator ()
 }
 
 void* ChunkTriangulator::operator()  (void* ptr) {
-	Chunk* chunk = (Chunk*)ptr;
+	ChunkPayload* chunk = (ChunkPayload*)ptr;
 	std::vector<vec3f> positions;
 	std::vector<vec3f> normals;
 	std::vector<uint> elements;
@@ -149,27 +175,45 @@ ChunkUploader::ChunkUploader (const H3DNode parent)
 void* ChunkUploader::operator() (void* ptr) {
 	if (ptr == 0) return 0;
 	
-	Chunk* chunk = (Chunk*)ptr;
+	ChunkPayload* chunk = (ChunkPayload*)ptr;
 	std::stringstream name ("chunk");
 	name << chunk->position;
 
 	//std::cout << "uploading " << chunk->position << std::endl;
 
-	H3DRes geometry = h3dAddResource(chunk->block->type, name.str().c_str(), 0);
-	if (geometry) h3dLoadResource(geometry, chunk->block->data, chunk->block->size);
+	H3DRes geometry = h3dAddResource(
+								chunk->block->type,
+								name.str().c_str(), 0
+					  		);
+	if (geometry) h3dLoadResource(
+							geometry,
+							chunk->block->data,
+							chunk->block->size
+				  		);
 
 	chunk->node = h3dAddModelNode(parent, name.str().c_str(), geometry);
 	
 	h3dSetNodeTransform(
-		chunk->node,
-		chunk->position.x * MAP_CHUNK_SIZE_X,
-		chunk->position.y * MAP_CHUNK_SIZE_Y,
-		chunk->position.z * MAP_CHUNK_SIZE_Z,
-		0, 0, 0, 1, 1, 1
-	);
+				chunk->node,
+				chunk->position.x * MAP_CHUNK_SIZE_X,
+				chunk->position.y * MAP_CHUNK_SIZE_Y,
+				chunk->position.z * MAP_CHUNK_SIZE_Z,
+				0, 0, 0, 1, 1, 1
+			);
 
-	H3DRes material = h3dAddResource(H3DResTypes::Material, "materials/mine.material.xml", 0);
-	h3dAddMeshNode(chunk->node, "DynGeoMesh", material, 0, chunk->elements_count, 0, chunk->vertices_count - 1);
+	H3DRes material = h3dAddResource(
+								H3DResTypes::Material,
+								"materials/mine.material.xml", 0
+							);
+	h3dAddMeshNode(
+			chunk->node,
+			"DynGeoMesh",
+			material,
+			0,
+			chunk->elements_count,
+			0,
+			chunk->vertices_count - 1
+		);
 
 	h3dutLoadResourcesFromDisk(".");
 

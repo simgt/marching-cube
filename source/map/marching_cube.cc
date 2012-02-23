@@ -80,7 +80,7 @@ struct edge_plane {
 
 // marching cube
 
-void marching_cube (const Chunk::raw_data_t& grid, // input
+void marching_cube (const chunk_data_array& grid, // input
 						 std::vector<vec3f>& positions,
 						 std::vector<vec3f>& normals,
 						 std::vector<uint>& triangles) { // output
