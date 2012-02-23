@@ -69,8 +69,11 @@ void mouse_button_listener (int button, int status) {
 			const mat4f* m;
 			h3dGetNodeTransMats(node, 0, (const float**)&m); // both matrix representation are in column major mode (internal H3D and mat)
 			mat4f inv = mat4f::inverse(*m); // world to model matrix
-			p = inv * p; // inverse the matrix and apply it to the position to recover the model-space position
+			//p = inv * p; // inverse the matrix and apply it to the position to recover the model-space position
 			outlog(p);
+
+			// modify the map
+			// map->modify(p) // p before inversion
 		}
 	}
 }

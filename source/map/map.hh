@@ -16,7 +16,9 @@
 #include <vector>
 
 #define MAP_VIEW_DISTANCE 5
-#define MAP_VIEW_AREA (2 * MAP_VIEW_DISTANCE + 1) * (2 * MAP_VIEW_DISTANCE + 1) * (2 * MAP_VIEW_DISTANCE + 1)
+#define MAP_VIEW_AREA (2 * MAP_VIEW_DISTANCE + 1) \
+					* (2 * MAP_VIEW_DISTANCE + 1) \
+					* (2 * MAP_VIEW_DISTANCE + 1)
 #define MAP_CHUNKS_PER_ROUND 10
 
 #define MAP_CHUNK_SIZE_X 10
@@ -88,34 +90,20 @@ private:
 		2 * MAP_VIEW_DISTANCE + 1> buffer;
 };
 
-struct Chunk {
-	typedef array3<uchar, MAP_CHUNK_SIZE_X + 1, MAP_CHUNK_SIZE_Y + 1, MAP_CHUNK_SIZE_Z + 1> raw_data_t;
-
-	vec3i position;
-	raw_data_t* grid;
-	uint vertices_count;
-	uint elements_count;
-	ResourceBlock* block;
-	H3DNode node;
-
-	Chunk (const vec3i& position)
-		: position (position) {
-	};
-};
-
-void marching_cube (const Chunk::raw_data_t& grid,
-					std::vector<vec3f>& positions,
-					std::vector<vec3f>& normals,
-					std::vector<uint>& triangles);
-
 /* ----- *
  *  MAP  *
  * ----- */
+
+typedef array3<uchar,
+			   MAP_CHUNK_SIZE_X + 1,
+			   MAP_CHUNK_SIZE_Y + 1,
+			   MAP_CHUNK_SIZE_Z + 1> chunk_data_array;
 
 class Map {
 public:
 	Map (const H3DNode);
 	void update (const vec3f&);
+	void modify (const vec3i& chunk, const vec3f& position);
 
 private:
 	std::thread worker;
@@ -128,7 +116,16 @@ private:
 	ChunkUploader uploader;
 	tbb::pipeline pipeline;
 
-	friend void worker_task (Map* map);
+	friend void worker_task (Map*);
 };
+
+/* ---------- *
+ * ALGORITHMS *
+ * ---------- */
+
+void marching_cube (const chunk_data_array& grid,
+					std::vector<vec3f>& positions,
+					std::vector<vec3f>& normals,
+					std::vector<uint>& triangles);
 
 #endif
