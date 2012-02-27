@@ -102,6 +102,10 @@ typedef array3<uchar,
 struct Chunk {
 	H3DNode node;
 	chunk_data_array data;
+
+	Chunk();
+	void load (const std::string& filepath);
+	void save (const std::string& filepath);
 };
 
 class Map {

@@ -1,6 +1,7 @@
 #include <global.hh>
 #include <util/math.hh>
 #include <map/map.hh>
+#include <map/util.hh>
 
 #include <glfw.h>
 #include <Horde3D/Horde3D.h>
@@ -22,11 +23,13 @@ double delay ();
 
 // camera
 
+Map* map = 0;
+
 struct {
 	H3DNode node;
 	vec3f position;
 	vec3f orientation;
-} camera = {0, vec3f(0, 5, 0), vec3f(0)};
+} camera = {0, vec3f(0, 8, 0), vec3f(0)};
 
 // events
 
@@ -69,11 +72,13 @@ void mouse_button_listener (int button, int status) {
 			const mat4f* m;
 			h3dGetNodeTransMats(node, 0, (const float**)&m); // both matrix representation are in column major mode (internal H3D and mat)
 			mat4f inv = mat4f::inverse(*m); // world to model matrix
-			//p = inv * p; // inverse the matrix and apply it to the position to recover the model-space position
+			
+			vec3i cp = chunk_coord(p);
+			p = inv * p; // inverse the matrix and apply it to the position to recover the model-space position
 			outlog(p);
 
 			// modify the map
-			// map->modify(p) // p before inversion
+			map->modify(cp, p); // p before inversion
 		}
 	}
 }
@@ -137,7 +142,7 @@ int main() {
 	//H3DRes panel_material2 = h3dAddResource(H3DResTypes::Material, "overlays/panel.material.xml", 0);
 	
 	// MAP
-	Map map (world);
+	map = new Map(world);
 	
 	// MAIN LOOP
 	
@@ -145,7 +150,7 @@ int main() {
 		// Increase animation time
 	    double t = delay();
 
-		map.update(camera.position);
+		map->update(camera.position);
 
 		// HUD
 		//h3dutShowText("0.01a", 0.01, 0.01, 0.03f, 1, 1, 1, font_tex);
