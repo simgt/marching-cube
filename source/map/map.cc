@@ -50,6 +50,15 @@ void Map::update (const vec3f& camera_position) {
 	}
 }
 
-void Map::modify (const vec3i&, const vec3f&) {
+void Map::modify (const vec3i& cp, const vec3f& p) {
+	std::cout << "modifying " << cp << std::endl;
 
+	chunk_data_array* data = &buffer(cp)->data;
+
+	vec3i pp = floor(p);
+
+	for (int i = 0; i < 5; i++)
+		for (int j = 0; j < 5; j++)
+			for (int k = 0; k < 5; k++)
+				data->at(i, j, k) = 0;
 }

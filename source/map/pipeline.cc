@@ -32,7 +32,7 @@ PayloadAllocator::PayloadAllocator (const Map* map)
 
 void* PayloadAllocator::operator() (void*) {
 	// increment 'it' while in the previous bounds
-	while (it.x >= previous.x - MAP_VIEW_DISTANCE
+	/*while (it.x >= previous.x - MAP_VIEW_DISTANCE
 		&& it.y >= previous.y - MAP_VIEW_DISTANCE
 		&& it.z >= previous.z - MAP_VIEW_DISTANCE
 	 	&& it.x <= previous.x + MAP_VIEW_DISTANCE
@@ -50,7 +50,7 @@ void* PayloadAllocator::operator() (void*) {
 			}
 
 			if (it.x > middle.x + MAP_VIEW_DISTANCE) return 0;
-	}
+	}*/
 	
 	// if the chunk wasn't in the previous bounds, generate it
 	Payload* payload = new Payload(it);
@@ -89,7 +89,7 @@ uchar density (const vec3i p) {
 	//return p.length() - 15;
 	/*int v = p.x * p.x + 17 * p.y - p.z * p.z;
 	return v >= 0 ? 0 : 255;*/
-	return p.y <= 0 ? 255 : 0;
+	return p.y <= 5 ? 255 : 0;
 	//return p.length() < 10 ? 255 : 0;
 	/*return -p.y <= 0 ? 0
 		 : -p.y >= 255 ? 255
@@ -102,6 +102,9 @@ ChunkGenerator::ChunkGenerator ()
 
 void* ChunkGenerator::operator() (void* ptr) {
 	Payload* payload = (Payload*)ptr;
+
+	// skip if the chunks already has data
+	if (payload->chunk->node != 0) return ptr;
 
 	vec3i offset (payload->position * vec3i(MAP_CHUNK_SIZE_X,
 										  MAP_CHUNK_SIZE_Y,
@@ -174,7 +177,7 @@ void* ChunkUploader::operator() (void* ptr) {
 	
 	Payload* payload = (Payload*)ptr;
 	std::stringstream name ("chunk");
-	name << payload->position;
+	name << payload->position << rand();
 
 	//std::cout << "uploading " << chunk->position << std::endl;
 
@@ -216,13 +219,13 @@ void* ChunkUploader::operator() (void* ptr) {
 
 	// delete the buffered Chunk if different and assign the new one
 	Chunk* chunk = map->buffer(payload->position);
-	if (chunk != 0) {
-		h3dRemoveNode(chunk->node);
-		if (chunk != payload->chunk) delete chunk;
+	if (chunk != 0) { // if a chunk is bufferised
+		h3dRemoveNode(chunk->node); // always remove its node
+		if (chunk != payload->chunk) delete chunk; // delete if different
 	}
 
 	payload->chunk->node = node;
-	map->buffer(payload->position) = payload->chunk;
+	map->buffer(payload->position) = payload->chunk; // save the chunk into the buffer
 
 	delete[] payload->block; // TODO check leak
 	delete payload;

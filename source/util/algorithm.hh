@@ -29,6 +29,14 @@ public:
 	typename std::array<T, X * Y * Z>::const_reference at (size_t x, size_t y, size_t z) const {
 		return operator()(x, y, z);
 	};
+
+	typename std::array<T, X * Y * Z>::reference at (const vec3i p) {
+		return operator()(p);
+	};
+	
+	typename std::array<T, X * Y * Z>::const_reference at (const vec3i p) const {
+		return operator()(p);
+	};
 };
 
 template <typename T, size_t X, size_t Y, size_t Z>
