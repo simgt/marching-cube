@@ -9,11 +9,13 @@
 void worker_task (Map* map);
 
 Map::Map (const H3DNode parent)
-	: allocator (),
+	: allocator (this),
 	  generator (),
 	  triangulator (),
-	  uploader (parent),
+	  uploader (this, parent),
 	  pipeline () {
+
+	std::memset(buffer.data(), 0, sizeof(buffer));
 
 	pipeline.add_filter(allocator);
 	pipeline.add_filter(generator);
@@ -48,6 +50,6 @@ void Map::update (const vec3f& camera_position) {
 	}
 }
 
-void Map::modify (const vec3i& chunk, const vec3f& position) {
+void Map::modify (const vec3i&, const vec3f&) {
 
 }
