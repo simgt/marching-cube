@@ -15,7 +15,7 @@
 
 #include <vector>
 
-#define MAP_VIEW_DISTANCE 5
+#define MAP_VIEW_DISTANCE 1
 #define MAP_VIEW_AREA (2 * MAP_VIEW_DISTANCE + 1) \
 					* (2 * MAP_VIEW_DISTANCE + 1) \
 					* (2 * MAP_VIEW_DISTANCE + 1)
@@ -25,25 +25,31 @@
 #define MAP_CHUNK_SIZE_Y 10
 #define MAP_CHUNK_SIZE_Z 10
 
+#define MAP_BUFFER_SIZE_XZ 5
+#define MAP_BUFFER_SIZE_Y  5
+
+class Map;
+
 /* -------- *
  * PIPELINE *
  * -------- */
 
-/* ChunkAllocator
+/* PayloadAllocator
  * 
  * Initialized with a map position
  * Generate 'Chunk' objects which distance to 'middle' is
  * less or equal to MAP_VIEW_DISTANCE */
 
-class ChunkAllocator : public tbb::filter {
+class PayloadAllocator : public tbb::filter {
 public:
-	ChunkAllocator ();
+	PayloadAllocator (const Map*);
 	void* operator() (void*);
 	void set_middle (const vec3i& middle);
 private:
 	vec3i middle;
 	vec3i previous;
 	vec3i it;
+	const Map* map;
 };
 
 /* ChunkGenerator
@@ -77,17 +83,11 @@ public:
 
 class ChunkUploader : public tbb::thread_bound_filter {
 public:
-	ChunkUploader (const H3DNode parent);
+	ChunkUploader (Map*, const H3DNode);
 	void* operator() (void* chunk);
 private:
+	Map* map;
 	H3DNode parent;
-	circular_array<
-		circular_array<
-			circular_array<
-				H3DNode,
-				2 * MAP_VIEW_DISTANCE + 1>,
-			2 * MAP_VIEW_DISTANCE + 1>,
-		2 * MAP_VIEW_DISTANCE + 1> buffer;
 };
 
 /* ----- *
@@ -99,6 +99,11 @@ typedef array3<uchar,
 			   MAP_CHUNK_SIZE_Y + 1,
 			   MAP_CHUNK_SIZE_Z + 1> chunk_data_array;
 
+struct Chunk {
+	H3DNode node;
+	chunk_data_array data;
+};
+
 class Map {
 public:
 	Map (const H3DNode);
@@ -106,17 +111,23 @@ public:
 	void modify (const vec3i& chunk, const vec3f& position);
 
 private:
+	/* buffer */
+	circular_array3<Chunk*, MAP_BUFFER_SIZE_XZ, MAP_BUFFER_SIZE_Y, MAP_BUFFER_SIZE_XZ> buffer;
+
+	/* worker */
 	std::thread worker;
 	tbb::concurrent_bounded_queue<vec3i> queue;
 
 	/* pipeline */
-	ChunkAllocator allocator;
+	PayloadAllocator allocator;
 	ChunkGenerator generator;
 	ChunkTriangulator triangulator;
 	ChunkUploader uploader;
 	tbb::pipeline pipeline;
 
 	friend void worker_task (Map*);
+	friend class PayloadAllocator;
+	friend class ChunkUploader;
 };
 
 /* ---------- *

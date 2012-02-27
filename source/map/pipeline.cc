@@ -4,33 +4,33 @@
 #include <sstream>
 #include <algorithm>
 
-/* ChunkPayload
+/* Payload
  *
  * Structure built and transmitted through the pipeline */
 
-struct ChunkPayload {
+struct Payload {
 	vec3i position;
-	chunk_data_array* grid;
+	Chunk* chunk;
 	uint vertices_count;
 	uint elements_count;
 	ResourceBlock* block;
-	H3DNode node;
 
-	ChunkPayload (const vec3i& position)
+	Payload (const vec3i& position)
 		: position (position) {
 	};
 };
 
 /* ChunkAllocator */
 
-ChunkAllocator::ChunkAllocator ()
+PayloadAllocator::PayloadAllocator (const Map* map)
 	: tbb::filter (tbb::filter::serial_in_order),
 	  middle (1 << 15), // TODO FIX THIS SHIT !!
 	  previous (0),
-	  it (0 - MAP_VIEW_DISTANCE) {
+	  it (0 - MAP_VIEW_DISTANCE),
+	  map (map) {
 }
 
-void* ChunkAllocator::operator() (void*) {
+void* PayloadAllocator::operator() (void*) {
 	// increment 'it' while in the previous bounds
 	while (it.x >= previous.x - MAP_VIEW_DISTANCE
 		&& it.y >= previous.y - MAP_VIEW_DISTANCE
@@ -53,8 +53,12 @@ void* ChunkAllocator::operator() (void*) {
 	}
 	
 	// if the chunk wasn't in the previous bounds, generate it
-	ChunkPayload* chunk = new ChunkPayload(it);
+	Payload* payload = new Payload(it);
 	
+	payload->chunk = map->buffer(it);
+	if (payload->chunk == 0)
+		payload->chunk = new Chunk;
+
 	// iterate one more time for the next call
 	it.z++;
 	if (it.z > middle.z + MAP_VIEW_DISTANCE) {
@@ -67,12 +71,12 @@ void* ChunkAllocator::operator() (void*) {
 		it.x++;
 	}
 	
-	if (it.x > middle.x + MAP_VIEW_DISTANCE) return 0;
+	if (it.x > middle.x + MAP_VIEW_DISTANCE) return 0; // TODO forgetting a chunk?
 
-	return (void*)chunk;
+	return (void*)payload;
 }
 
-void ChunkAllocator::set_middle (const vec3i& middle) {
+void PayloadAllocator::set_middle (const vec3i& middle) {
 	this->previous = this->middle;
 	this->middle = middle;
 	this->it = middle - MAP_VIEW_DISTANCE;
@@ -97,21 +101,18 @@ ChunkGenerator::ChunkGenerator ()
 }
 
 void* ChunkGenerator::operator() (void* ptr) {
-	ChunkPayload* chunk = (ChunkPayload*)ptr;
-	chunk_data_array* grid = new chunk_data_array;
-	
-	vec3i offset (chunk->position * vec3i(MAP_CHUNK_SIZE_X,
+	Payload* payload = (Payload*)ptr;
+
+	vec3i offset (payload->position * vec3i(MAP_CHUNK_SIZE_X,
 										  MAP_CHUNK_SIZE_Y,
 										  MAP_CHUNK_SIZE_Z));
 	
 	for (int i = 0; i < MAP_CHUNK_SIZE_X + 1; i++)  		//x axis
 		for (int j = 0; j < MAP_CHUNK_SIZE_Y + 1; j++)		//y axis
 			for (int k = 0; k < MAP_CHUNK_SIZE_Z + 1; k++) 	//z axis
-				(*grid)(i, j, k) = density(vec3i(offset.x + i,
+				payload->chunk->data(i, j, k) = density(vec3i(offset.x + i,
 												 offset.y + j,
 												 offset.z + k));
-	
-	chunk->grid = grid;
 	
 	return ptr;
 }
@@ -124,17 +125,17 @@ ChunkTriangulator::ChunkTriangulator ()
 }
 
 void* ChunkTriangulator::operator()  (void* ptr) {
-	ChunkPayload* chunk = (ChunkPayload*)ptr;
+	Payload* payload = (Payload*)ptr;
 	std::vector<vec3f> positions;
 	std::vector<vec3f> normals;
 	std::vector<uint> elements;
 
 	// run marching cube algorithm
 	//std::cout << "triangulating " << chunk->position << std::endl;
-	marching_cube(*chunk->grid, positions, normals, elements);
+	marching_cube(payload->chunk->data, positions, normals, elements);
 
 	if (positions.size() == 0 || elements.size() == 0) {
-		delete chunk;
+		delete payload;
 		return 0;
 	}
 
@@ -143,11 +144,11 @@ void* ChunkTriangulator::operator()  (void* ptr) {
 	for (uint i = 0; i < normals.size(); i++)
 		normals_short[i] = normals[i] * 32767;
 
-	chunk->vertices_count = positions.size();
-	chunk->elements_count = elements.size();
+	payload->vertices_count = positions.size();
+	payload->elements_count = elements.size();
 
 	// create the resource block
-	chunk->block = create_geometry_data(
+	payload->block = create_geometry_data(
 		positions.size(),
 		elements.size(),
 		(float*)positions.data(),
@@ -162,42 +163,38 @@ void* ChunkTriangulator::operator()  (void* ptr) {
 
 /* ChunkUploader */
 
-ChunkUploader::ChunkUploader (const H3DNode parent)
+ChunkUploader::ChunkUploader (Map* map, const H3DNode parent)
 	: tbb::thread_bound_filter (tbb::filter::serial_out_of_order),
+	  map (map),
 	  parent (parent) {
-		vec3i it;
-		for (int x = 0; x < 2 * MAP_VIEW_DISTANCE + 1; x++)
-			for (int y = 0; y < 2 * MAP_VIEW_DISTANCE + 1; y++)
-				for (int z = 0; z < 2 * MAP_VIEW_DISTANCE + 1; z++)
-					buffer[x][y][z] = 0;
 }
 
 void* ChunkUploader::operator() (void* ptr) {
 	if (ptr == 0) return 0;
 	
-	ChunkPayload* chunk = (ChunkPayload*)ptr;
+	Payload* payload = (Payload*)ptr;
 	std::stringstream name ("chunk");
-	name << chunk->position;
+	name << payload->position;
 
 	//std::cout << "uploading " << chunk->position << std::endl;
 
 	H3DRes geometry = h3dAddResource(
-								chunk->block->type,
+								payload->block->type,
 								name.str().c_str(), 0
 					  		);
 	if (geometry) h3dLoadResource(
 							geometry,
-							chunk->block->data,
-							chunk->block->size
+							payload->block->data,
+							payload->block->size
 				  		);
 
-	chunk->node = h3dAddModelNode(parent, name.str().c_str(), geometry);
+	H3DNode node = h3dAddModelNode(parent, name.str().c_str(), geometry);
 	
 	h3dSetNodeTransform(
-				chunk->node,
-				chunk->position.x * MAP_CHUNK_SIZE_X,
-				chunk->position.y * MAP_CHUNK_SIZE_Y,
-				chunk->position.z * MAP_CHUNK_SIZE_Z,
+				node,
+				payload->position.x * MAP_CHUNK_SIZE_X,
+				payload->position.y * MAP_CHUNK_SIZE_Y,
+				payload->position.z * MAP_CHUNK_SIZE_Z,
 				0, 0, 0, 1, 1, 1
 			);
 
@@ -206,19 +203,29 @@ void* ChunkUploader::operator() (void* ptr) {
 								"materials/mine.material.xml", 0
 							);
 	h3dAddMeshNode(
-			chunk->node,
+			node,
 			"DynGeoMesh",
 			material,
 			0,
-			chunk->elements_count,
+			payload->elements_count,
 			0,
-			chunk->vertices_count - 1
+			payload->vertices_count - 1
 		);
 
 	h3dutLoadResourcesFromDisk(".");
 
-	delete[] chunk->block; // TODO check leak
-	delete chunk;
+	// delete the buffered Chunk if different and assign the new one
+	Chunk* chunk = map->buffer(payload->position);
+	if (chunk != 0) {
+		h3dRemoveNode(chunk->node);
+		if (chunk != payload->chunk) delete chunk;
+	}
+
+	payload->chunk->node = node;
+	map->buffer(payload->position) = payload->chunk;
+
+	delete[] payload->block; // TODO check leak
+	delete payload;
 
 	// finally, replace in the buffer
 	//H3DNode old = buffer[chunk->position.x][chunk->position.y][chunk->position.z];
