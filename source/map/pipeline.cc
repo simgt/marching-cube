@@ -74,7 +74,7 @@ uchar density (const vec3i p) {
 	//return p.length() - 15;
 	/*int v = p.x * p.x + 17 * p.y - p.z * p.z;
 	return v >= 0 ? 0 : 255;*/
-	return p.y <= 5 ? 255 : 0;
+	return p.y <= 5 ? 127 : -128;
 	//return p.length() < 10 ? 255 : 0;
 	/*return -p.y <= 0 ? 0
 		 : -p.y >= 255 ? 255
@@ -161,8 +161,8 @@ void* ChunkUploader::operator() (void* ptr) {
 	if (ptr == 0) return 0;
 	
 	Payload* payload = (Payload*)ptr;
-	std::stringstream name ("chunk");
-	name << payload->position;
+	std::stringstream name;
+	name << "chunk" << payload->position;
 
 	std::cout << "uploading " << payload->position << std::endl;
 

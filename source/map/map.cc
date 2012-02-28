@@ -51,7 +51,7 @@ void Map::update (const vec3f& camera_position) {
 	}
 }
 
-void Map::modify (const vec3i& cp, const vec3f& p) {
+void Map::modify (const vec3i& cp, const vec3f& p, char value) {
 	std::cout << "modifying " << cp << std::endl;
 
 	// payload creation
@@ -62,11 +62,11 @@ void Map::modify (const vec3i& cp, const vec3f& p) {
 	// chunks modifications
 	chunk_data_array* data = &buffer(cp)->data;
 	vec3i pp = floor(p);
-	data->at(pp) = std::min(255, data->at(pp) + 10);
-	/*for (int i = 3; i <= 6; i++)
-	for (int j = 3; j <= 6; j++)
-		for (int k = 3; k <= 6; k++)
-			data->at(i, j, k) = 0;*/
+	
+	for (int i = std::max(0, pp.x - 1); i <= std::min(MAP_CHUNK_SIZE_X - 1, pp.x + 1); i++)
+		for (int j = std::max(0, pp.y - 1); j <= std::min(MAP_CHUNK_SIZE_Y - 1, pp.y + 1); j++)
+			for (int k = std::max(0, pp.z - 1); k <= std::min(MAP_CHUNK_SIZE_Z - 1, pp.z + 1); k++)
+				data->at(i, j, k) = std::max(-128, std::min(127, data->at(i, j, k) + value));
 
 	// running partial pipeline on chunk
 	triangulator(payload);
