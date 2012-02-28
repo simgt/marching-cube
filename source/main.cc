@@ -16,7 +16,7 @@
 #define CAMERA_T_SPEED 10.0f
 #define CAMERA_R_SPEED 0.1f // angular speed (degrees)
 
-#define PICK_RAY_LENGTH 10.0f 
+#define PICK_RAY_LENGTH 20.0f 
 
 // time
 double delay ();
@@ -57,8 +57,15 @@ void mouse_position_listener (int mx, int my) {
 }
 
 void mouse_button_listener (int button, int status) {
-	if (status == GLFW_PRESS) {
-		vec3f p, d; // position and direction of the picking ray
+	
+}
+
+char edit_ray (vec3i& cp, vec3f& p) {
+	bool mouse_left = glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+	bool mouse_right = glfwGetMouseButton(GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
+
+	if ((mouse_left && !mouse_right) || (!mouse_left && mouse_right)) {
+		vec3f d; // position and direction of the picking ray
 		
 		h3dutPickRay(camera.node, 0.5, 0.5, &p.x, &p.y, &p.z, &d.x, &d.y, &d.z); // get the picking ray of the center of the screen
 		d.length(PICK_RAY_LENGTH); // set ray length to maximum reachable by player
@@ -73,21 +80,15 @@ void mouse_button_listener (int button, int status) {
 			h3dGetNodeTransMats(node, 0, (const float**)&m); // both matrix representation are in column major mode (internal H3D and mat)
 			mat4f inv = mat4f::inverse(*m); // world to model matrix
 			
-			vec3i cp = chunk_coord(p);
+			cp = chunk_coord(p);
 			p = inv * p; // inverse the matrix and apply it to the position to recover the model-space position
-			outlog(p);
-
-			// modify the map
-			switch (button) {
-				case GLFW_MOUSE_BUTTON_LEFT:
-					map->modify(cp, p, 20);
-					break;
-				case GLFW_MOUSE_BUTTON_RIGHT:
-					map->modify(cp, p, -20);
-					break;
-			}
 		}
-	}
+		else return 0;
+	} else return 0;
+
+	return mouse_left ? 10
+		 : mouse_right ? -10
+		 : 0;
 }
 
 // main
@@ -164,6 +165,13 @@ int main() {
 		//h3dutShowFrameStats(font_tex, panel_material2, H3DUTMaxStatMode);
 
 		// inputs
+		// EDIT
+		vec3i chunk_coord;
+		vec3f edit_coord;
+		char v = edit_ray(chunk_coord, edit_coord);
+		if (v != 0) map->modify(chunk_coord, edit_coord, v);
+
+		// MOVE
 		if (glfwGetKey('E')) {
 			h3dSetNodeTransform(light, camera.position.x, camera.position.y, camera.position.z, camera.orientation.x, camera.orientation.y, camera.orientation.z, 1, 1, 1);
 		}

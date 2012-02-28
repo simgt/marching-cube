@@ -15,14 +15,14 @@
 
 #include <vector>
 
-#define MAP_VIEW_DISTANCE 5
+#define MAP_VIEW_DISTANCE 2
 #define MAP_VIEW_AREA (2 * MAP_VIEW_DISTANCE + 1) \
 					* (2 * MAP_VIEW_DISTANCE + 1) \
 					* (2 * MAP_VIEW_DISTANCE + 1)
 #define MAP_CHUNKS_PER_ROUND 30
 
 #define MAP_CHUNK_SIZE_X 20
-#define MAP_CHUNK_SIZE_Y 10
+#define MAP_CHUNK_SIZE_Y 30
 #define MAP_CHUNK_SIZE_Z 20
 
 #define MAP_BUFFER_SIZE_XZ 20
