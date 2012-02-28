@@ -2,8 +2,10 @@
 
 #include <fstream>
 
-Chunk::Chunk ()
-	: node (0) {
+Chunk::Chunk (const vec3i& coord)
+	: coord (coord),
+	  node (0),
+	  geometry (0) {
 };
 
 void Chunk::load (const std::string& filepath) {

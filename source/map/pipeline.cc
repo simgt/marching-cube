@@ -4,22 +4,6 @@
 #include <sstream>
 #include <algorithm>
 
-/* Payload
- *
- * Structure built and transmitted through the pipeline */
-
-struct Payload {
-	vec3i position;
-	Chunk* chunk;
-	uint vertices_count;
-	uint elements_count;
-	ResourceBlock* block;
-
-	Payload (const vec3i& position)
-		: position (position) {
-	};
-};
-
 /* ChunkAllocator */
 
 PayloadAllocator::PayloadAllocator (const Map* map)
@@ -53,11 +37,12 @@ void* PayloadAllocator::operator() (void*) {
 	}*/
 	
 	// if the chunk wasn't in the previous bounds, generate it
-	Payload* payload = new Payload(it);
-	
+	Payload* payload = new Payload;
+	payload->position = it;
+
 	payload->chunk = map->buffer(it);
-	if (payload->chunk == 0)
-		payload->chunk = new Chunk;
+	if (payload->chunk == 0 || payload->chunk->coord != it)
+		payload->chunk = new Chunk(it);
 
 	// iterate one more time for the next call
 	it.z++;
@@ -177,63 +162,86 @@ void* ChunkUploader::operator() (void* ptr) {
 	
 	Payload* payload = (Payload*)ptr;
 	std::stringstream name ("chunk");
-	name << payload->position << rand();
+	name << payload->position;
 
-	//std::cout << "uploading " << chunk->position << std::endl;
+	std::cout << "uploading " << payload->position << std::endl;
 
-	H3DRes geometry = h3dAddResource(
+	// clear the buffer cell
+	Chunk* chunk = map->buffer(payload->position);
+
+	// delete the old Chunk save the new one into the buffer
+	if (chunk != 0 && chunk != payload->chunk) {
+		h3dRemoveNode(chunk->node);
+		h3dRemoveResource(chunk->geometry);
+		h3dReleaseUnusedResources();
+		delete chunk;
+		map->buffer(payload->position) = 0;
+		std::cout << "  cleared" << std::endl;
+	}
+
+	chunk = payload->chunk;
+
+	// allocate a new geometry if no previous one
+	if (chunk->geometry == 0) {
+		chunk->geometry = h3dAddResource(
 								payload->block->type,
 								name.str().c_str(), 0
 					  		);
-	if (geometry) h3dLoadResource(
-							geometry,
-							payload->block->data,
-							payload->block->size
-				  		);
+		std::cout << "  creating geometry" << std::endl;
+	}
+	else {
+		h3dUnloadResource(chunk->geometry);
+		std::cout << "  updating geometry" << std::endl;
+	}
 
-	H3DNode node = h3dAddModelNode(parent, name.str().c_str(), geometry);
+
+	h3dLoadResource(
+		chunk->geometry,
+		payload->block->data,
+		payload->block->size
+	);
+
+	// create a node if there is no previous one (only the geometry needs to change)
+	if (chunk->node == 0) {
+		std::cout << "  creating node" << std::endl;
+
+		chunk->node = h3dAddModelNode(
+							parent,
+							name.str().c_str(),
+							chunk->geometry
+					  );
 	
-	h3dSetNodeTransform(
-				node,
+		h3dSetNodeTransform(
+				chunk->node,
 				payload->position.x * MAP_CHUNK_SIZE_X,
 				payload->position.y * MAP_CHUNK_SIZE_Y,
 				payload->position.z * MAP_CHUNK_SIZE_Z,
 				0, 0, 0, 1, 1, 1
 			);
 
-	H3DRes material = h3dAddResource(
+		H3DRes material = h3dAddResource(
 								H3DResTypes::Material,
 								"materials/mine.material.xml", 0
 							);
-	h3dAddMeshNode(
-			node,
-			"DynGeoMesh",
-			material,
-			0,
-			payload->elements_count,
-			0,
-			payload->vertices_count - 1
-		);
+		h3dAddMeshNode(
+				chunk->node,
+				name.str().c_str(),
+				material,
+				0,
+				payload->elements_count,
+				0,
+				payload->vertices_count - 1
+			);
 
-	h3dutLoadResourcesFromDisk(".");
-
-	// delete the buffered Chunk if different and assign the new one
-	Chunk* chunk = map->buffer(payload->position);
-	if (chunk != 0) { // if a chunk is bufferised
-		h3dRemoveNode(chunk->node); // always remove its node
-		if (chunk != payload->chunk) delete chunk; // delete if different
+		h3dutLoadResourcesFromDisk(".");
 	}
+	
+	// save the Chunk to the map buffer
+	map->buffer(payload->position) = chunk;
 
-	payload->chunk->node = node;
-	map->buffer(payload->position) = payload->chunk; // save the chunk into the buffer
-
+	// clear the pipeline data
 	delete[] payload->block; // TODO check leak
 	delete payload;
-
-	// finally, replace in the buffer
-	//H3DNode old = buffer[chunk->position.x][chunk->position.y][chunk->position.z];
-	//if (old != 0) h3dRemoveNode(old); // can be removed after initialization
-	//buffer[chunk->position.x][chunk->position.y][chunk->position.z] = chunk->node;
 
 	return 0;
 }

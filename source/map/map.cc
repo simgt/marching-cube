@@ -5,6 +5,7 @@
 #include <tbb/pipeline.h>
 
 #include <iostream>
+#include <algorithm>
 
 void worker_task (Map* map);
 
@@ -53,12 +54,21 @@ void Map::update (const vec3f& camera_position) {
 void Map::modify (const vec3i& cp, const vec3f& p) {
 	std::cout << "modifying " << cp << std::endl;
 
+	// payload creation
+	Payload* payload = new Payload;
+	payload->position = cp;
+	payload->chunk = buffer(cp);
+
+	// chunks modifications
 	chunk_data_array* data = &buffer(cp)->data;
-
 	vec3i pp = floor(p);
+	data->at(pp) = std::min(255, data->at(pp) + 10);
+	/*for (int i = 3; i <= 6; i++)
+	for (int j = 3; j <= 6; j++)
+		for (int k = 3; k <= 6; k++)
+			data->at(i, j, k) = 0;*/
 
-	for (int i = 0; i < 5; i++)
-		for (int j = 0; j < 5; j++)
-			for (int k = 0; k < 5; k++)
-				data->at(i, j, k) = 0;
+	// running partial pipeline on chunk
+	triangulator(payload);
+	uploader(payload);
 }
