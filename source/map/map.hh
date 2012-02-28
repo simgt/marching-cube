@@ -15,22 +15,22 @@
 
 #include <vector>
 
-#define MAP_VIEW_DISTANCE 1
+#define MAP_VIEW_DISTANCE 5
 #define MAP_VIEW_AREA (2 * MAP_VIEW_DISTANCE + 1) \
 					* (2 * MAP_VIEW_DISTANCE + 1) \
 					* (2 * MAP_VIEW_DISTANCE + 1)
-#define MAP_CHUNKS_PER_ROUND 10
+#define MAP_CHUNKS_PER_ROUND 30
 
-#define MAP_CHUNK_SIZE_X 10
+#define MAP_CHUNK_SIZE_X 20
 #define MAP_CHUNK_SIZE_Y 10
-#define MAP_CHUNK_SIZE_Z 10
+#define MAP_CHUNK_SIZE_Z 20
 
-#define MAP_BUFFER_SIZE_XZ 5
-#define MAP_BUFFER_SIZE_Y  5
+#define MAP_BUFFER_SIZE_XZ 20
+#define MAP_BUFFER_SIZE_Y  20
 
 class Map;
 
-typedef array3<uchar,
+typedef array3<volatile char,
 			   MAP_CHUNK_SIZE_X,
 			   MAP_CHUNK_SIZE_Y,
 			   MAP_CHUNK_SIZE_Z> chunk_data_array;
@@ -126,7 +126,7 @@ class Map {
 public:
 	Map (const H3DNode);
 	void update (const vec3f&);
-	void modify (const vec3i& chunk, const vec3f& position);
+	void modify (const vec3i& chunk, const vec3f& position, char value);
 
 private:
 	/* buffer */

@@ -57,7 +57,7 @@ void mouse_position_listener (int mx, int my) {
 }
 
 void mouse_button_listener (int button, int status) {
-	if (button == GLFW_MOUSE_BUTTON_LEFT && status == GLFW_PRESS) {
+	if (status == GLFW_PRESS) {
 		vec3f p, d; // position and direction of the picking ray
 		
 		h3dutPickRay(camera.node, 0.5, 0.5, &p.x, &p.y, &p.z, &d.x, &d.y, &d.z); // get the picking ray of the center of the screen
@@ -78,7 +78,14 @@ void mouse_button_listener (int button, int status) {
 			outlog(p);
 
 			// modify the map
-			map->modify(cp, p); // p before inversion
+			switch (button) {
+				case GLFW_MOUSE_BUTTON_LEFT:
+					map->modify(cp, p, 20);
+					break;
+				case GLFW_MOUSE_BUTTON_RIGHT:
+					map->modify(cp, p, -20);
+					break;
+			}
 		}
 	}
 }
