@@ -111,7 +111,7 @@ void marching_cube (const chunk_data_array& grid, // input
 	std::memset(memo_x.oz, -1, MAP_CHUNK_SIZE_Y * (MAP_CHUNK_SIZE_Z + 1) * sizeof(int));
 	
 	// X-AXIS
-	for (int i = 0; i < MAP_CHUNK_SIZE_X; i++) { 		//x axis
+	for (int i = 0; i < MAP_CHUNK_SIZE_X - 1; i++) { 		//x axis
 		// X-axis memoization (YZ plane)
 		edge_plane next_x = {
 			(int*)alloca((MAP_CHUNK_SIZE_Y + 1) * MAP_CHUNK_SIZE_Z * sizeof(int)),
@@ -126,13 +126,13 @@ void marching_cube (const chunk_data_array& grid, // input
 		std::memset(memo_y, -1, (3 * MAP_CHUNK_SIZE_Y + 1) * sizeof(int));
 
 		// Y-AXIS
-		for (int j = 0; j < MAP_CHUNK_SIZE_Y; j++) {
+		for (int j = 0; j < MAP_CHUNK_SIZE_Y - 1; j++) {
 			// memoization: indexes of the previous z-line
 			int next_y[3 * MAP_CHUNK_SIZE_Y + 1];
 			std::memset(next_y, -1, (3 * MAP_CHUNK_SIZE_Y + 1) * sizeof(int));
 
 			//z axis
-			for (int k = 0; k < MAP_CHUNK_SIZE_Z; k++) {
+			for (int k = 0; k < MAP_CHUNK_SIZE_Z - 1; k++) {
 				uchar val[8] = { // fetch the value of the eight vertices of the cube
 					grid(i    , j    , k    ),
 					grid(i + 1, j    , k    ),
