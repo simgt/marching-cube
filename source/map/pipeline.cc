@@ -95,9 +95,9 @@ void* ChunkGenerator::operator() (void* ptr) {
 										  MAP_CHUNK_SIZE_Y,
 										  MAP_CHUNK_SIZE_Z));
 	
-	for (int i = 0; i < MAP_CHUNK_SIZE_X + 1; i++)  		//x axis
-		for (int j = 0; j < MAP_CHUNK_SIZE_Y + 1; j++)		//y axis
-			for (int k = 0; k < MAP_CHUNK_SIZE_Z + 1; k++) 	//z axis
+	for (int i = 0; i < MAP_CHUNK_SIZE_X; i++)  		//x axis
+		for (int j = 0; j < MAP_CHUNK_SIZE_Y; j++)		//y axis
+			for (int k = 0; k < MAP_CHUNK_SIZE_Z; k++) 	//z axis
 				payload->chunk->data(i, j, k) = density(vec3i(offset.x + i,
 												 offset.y + j,
 												 offset.z + k));
@@ -194,6 +194,10 @@ void* ChunkUploader::operator() (void* ptr) {
 		std::cout << "  updating geometry" << std::endl;
 	}
 
+
+	std::cout << "  " << payload->vertices_count << " vertices and "
+			  << payload->elements_count << " elements ("
+			  << payload->block->size << " total size)" << std::endl;
 
 	h3dLoadResource(
 		chunk->geometry,

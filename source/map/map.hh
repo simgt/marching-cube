@@ -31,9 +31,9 @@
 class Map;
 
 typedef array3<uchar,
-			   MAP_CHUNK_SIZE_X + 1,
-			   MAP_CHUNK_SIZE_Y + 1,
-			   MAP_CHUNK_SIZE_Z + 1> chunk_data_array;
+			   MAP_CHUNK_SIZE_X,
+			   MAP_CHUNK_SIZE_Y,
+			   MAP_CHUNK_SIZE_Z> chunk_data_array;
 
 struct Chunk {
 	vec3i coord;

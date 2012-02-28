@@ -45,7 +45,7 @@ void Map::update (const vec3f& camera_position) {
 		; // upload at most 5 chunks per round
 
 	if (middle != p) {
-		std::cout << middle << " --> " << p << std::endl;		
+		//std::cout << middle << " --> " << p << std::endl;		
 		queue.push(p);
 		middle = p;
 	}
