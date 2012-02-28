@@ -30,9 +30,37 @@
 
 class Map;
 
+typedef array3<uchar,
+			   MAP_CHUNK_SIZE_X + 1,
+			   MAP_CHUNK_SIZE_Y + 1,
+			   MAP_CHUNK_SIZE_Z + 1> chunk_data_array;
+
+struct Chunk {
+	vec3i coord;
+	H3DNode node;
+	H3DRes geometry;
+	chunk_data_array data;
+
+	Chunk(const vec3i&);
+	void load (const std::string& filepath);
+	void save (const std::string& filepath);
+};
+
 /* -------- *
  * PIPELINE *
  * -------- */
+
+/* Payload
+*
+* Structure built and transmitted through the pipeline */
+
+struct Payload {
+	vec3i position;
+	Chunk* chunk;
+	uint vertices_count;
+	uint elements_count;
+	ResourceBlock* block;
+};
 
 /* PayloadAllocator
  * 
@@ -93,20 +121,6 @@ private:
 /* ----- *
  *  MAP  *
  * ----- */
-
-typedef array3<uchar,
-			   MAP_CHUNK_SIZE_X + 1,
-			   MAP_CHUNK_SIZE_Y + 1,
-			   MAP_CHUNK_SIZE_Z + 1> chunk_data_array;
-
-struct Chunk {
-	H3DNode node;
-	chunk_data_array data;
-
-	Chunk();
-	void load (const std::string& filepath);
-	void save (const std::string& filepath);
-};
 
 class Map {
 public:

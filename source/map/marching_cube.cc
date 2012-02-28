@@ -154,18 +154,18 @@ void marching_cube (const chunk_data_array& grid, // input
 				if (edge_table[index] == 0 || edge_table[index] == 0xff) continue;
 				// retrieve indexes in the vertices array of the previously built vertices from the memoization register
 				int memo_cube[12] = {
-					/*  0 */ memo_y[3 * k],
-					/*  1 */ next_x.oz[j * MAP_CHUNK_SIZE_Z + k], //
-					/*  2 */ memo_y[3 * k + 3],
-					/*  3 */ memo_x.oz[j * MAP_CHUNK_SIZE_Z + k],
-					/*  4 */ next_y[3 * k],
+					/*  0 */ -1,//memo_y[3 * k],
+					/*  1 */ -1,//next_x.oz[j * MAP_CHUNK_SIZE_Z + k], //
+					/*  2 */ -1,//memo_y[3 * k + 3],
+					/*  3 */ -1,//memo_x.oz[j * MAP_CHUNK_SIZE_Z + k],
+					/*  4 */ -1,//next_y[3 * k],
 					/*  5 */ -1,
 					/*  6 */ -1,
-					/*  7 */ memo_x.oz[(j + 1) * MAP_CHUNK_SIZE_Z + k],
-					/*  8 */ memo_x.oy[j * (MAP_CHUNK_SIZE_Z - 1) + k], // BUG
-					/*  9 */ next_x.oy[j * (MAP_CHUNK_SIZE_Z - 1) + k], // BUG
+					/*  7 */ -1,//memo_x.oz[(j + 1) * MAP_CHUNK_SIZE_Z + k],
+					/*  8 */ -1,//memo_x.oy[j * (MAP_CHUNK_SIZE_Z - 1) + k], // BUG
+					/*  9 */ -1,//next_x.oy[j * (MAP_CHUNK_SIZE_Z - 1) + k], // BUG
 					/* 10 */ -1,
-					/* 11 */ memo_x.oy[j * (MAP_CHUNK_SIZE_Z - 1) + k + 1] // BUG
+					/* 11 */ -1//memo_x.oy[j * (MAP_CHUNK_SIZE_Z - 1) + k + 1] // BUG
 				};
 
 				// get the origin corner of the cube
