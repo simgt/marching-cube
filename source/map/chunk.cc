@@ -5,7 +5,9 @@
 Chunk::Chunk (const vec3i& coord)
 	: coord (coord),
 	  node (0),
-	  geometry (0) {
+	  geometry (0),
+	  mesh (0),
+	  material (0) {
 };
 
 void Chunk::load (const std::string& filepath) {

@@ -1,4 +1,5 @@
-* corriger le bug lors génération de certains chunks (non générés)
+* corriger bug lors de l'augmentation de la taille de la geometrie
+* abstraire les données de la map, accès direct depuis marching cube
 * format de stockage endian-independent
 
 * OPTIM, TODO

@@ -39,6 +39,8 @@ struct Chunk {
 	vec3i coord;
 	H3DNode node;
 	H3DRes geometry;
+	H3DNode mesh;
+	H3DRes material;
 	chunk_data_array data;
 
 	Chunk(const vec3i&);

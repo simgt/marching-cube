@@ -60,7 +60,7 @@ void mouse_button_listener (int button, int status) {
 	
 }
 
-char edit_ray (vec3i& cp, vec3f& p) {
+int edit_ray (vec3i& cp, vec3f& p) {
 	bool mouse_left = glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
 	bool mouse_right = glfwGetMouseButton(GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
 
@@ -86,8 +86,8 @@ char edit_ray (vec3i& cp, vec3f& p) {
 		else return 0;
 	} else return 0;
 
-	return mouse_left ? 10
-		 : mouse_right ? -10
+	return mouse_left ? 200
+		 : mouse_right ? -200
 		 : 0;
 }
 
@@ -168,8 +168,8 @@ int main() {
 		// EDIT
 		vec3i chunk_coord;
 		vec3f edit_coord;
-		char v = edit_ray(chunk_coord, edit_coord);
-		if (v != 0) map->modify(chunk_coord, edit_coord, v);
+		int v = edit_ray(chunk_coord, edit_coord);
+		if (v != 0) map->modify(chunk_coord, edit_coord, v * t);
 
 		// MOVE
 		if (glfwGetKey('E')) {
