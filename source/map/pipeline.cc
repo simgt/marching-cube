@@ -191,19 +191,19 @@ void* ChunkUploader::operator() (void* ptr) {
 	}
 	else {
 		h3dUnloadResource(chunk->geometry);
-		std::cout << "  updating geometry" << std::endl;
+		std::cout << "  unloading geometry" << std::endl;
 	}
 
-
-	std::cout << "  " << payload->vertices_count << " vertices and "
-			  << payload->elements_count << " elements ("
-			  << payload->block->size << " total size)" << std::endl;
-
+	std::cout << "  loading geometry" << std::endl;
 	h3dLoadResource(
 		chunk->geometry,
 		payload->block->data,
 		payload->block->size
 	);
+
+	std::cout << "  " << payload->vertices_count << " vertices and "
+			  << payload->elements_count << " elements ("
+			  << payload->block->size << " total size)" << std::endl;
 
 	// create a node if there is no previous one (only the geometry needs to change)
 	if (chunk->node == 0) {
@@ -223,22 +223,24 @@ void* ChunkUploader::operator() (void* ptr) {
 				0, 0, 0, 1, 1, 1
 			);
 
-		H3DRes material = h3dAddResource(
+		chunk->material = h3dAddResource(
 								H3DResTypes::Material,
 								"materials/mine.material.xml", 0
 							);
-		h3dAddMeshNode(
-				chunk->node,
-				name.str().c_str(),
-				material,
-				0,
-				payload->elements_count,
-				0,
-				payload->vertices_count - 1
-			);
 
 		h3dutLoadResourcesFromDisk(".");
 	}
+	
+	h3dRemoveNode(chunk->mesh);
+	chunk->mesh = h3dAddMeshNode(
+						chunk->node,
+						name.str().c_str(),
+						chunk->material,
+						0,
+						payload->elements_count,
+						0,
+						payload->vertices_count - 1
+					);
 	
 	// save the Chunk to the map buffer
 	map->buffer(payload->position) = chunk;
