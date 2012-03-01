@@ -19,11 +19,16 @@
 #define MAP_VIEW_AREA (2 * MAP_VIEW_DISTANCE + 1) \
 					* (2 * MAP_VIEW_DISTANCE + 1) \
 					* (2 * MAP_VIEW_DISTANCE + 1)
+#define MAP_VIEW_COUNT (2 * MAP_VIEW_DISTANCE + 1)
+
 #define MAP_CHUNKS_PER_ROUND 30
 
 #define MAP_CHUNK_SIZE_X 20
-#define MAP_CHUNK_SIZE_Y 30
+#define MAP_CHUNK_SIZE_Y 20
 #define MAP_CHUNK_SIZE_Z 20
+
+#define MAP_BLOCK_SIZE 32
+#define MAP_CHUNK_SIZE 16
 
 #define MAP_BUFFER_SIZE_XZ 20
 #define MAP_BUFFER_SIZE_Y  20
@@ -124,6 +129,16 @@ private:
  *  MAP  *
  * ----- */
 
+struct Voxel {
+	char density;
+	uchar material;
+};
+
+typedef array3<volatile Voxel,
+			   MAP_CHUNK_SIZE_X,
+			   MAP_CHUNK_SIZE_Y,
+			   MAP_CHUNK_SIZE_Z> Block;
+
 class Map {
 public:
 	Map (const H3DNode);
@@ -133,6 +148,9 @@ public:
 private:
 	/* buffer */
 	circular_array3<Chunk*, MAP_BUFFER_SIZE_XZ, MAP_BUFFER_SIZE_Y, MAP_BUFFER_SIZE_XZ> buffer;
+	array3<volatile char, MAP_CHUNK_SIZE * MAP_VIEW_COUNT + 1,
+					  	  MAP_CHUNK_SIZE * MAP_VIEW_COUNT + 1,
+					  	  MAP_CHUNK_SIZE * MAP_VIEW_COUNT + 1> data;
 
 	/* worker */
 	std::thread worker;

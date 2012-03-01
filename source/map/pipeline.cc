@@ -164,7 +164,7 @@ void* ChunkUploader::operator() (void* ptr) {
 	std::stringstream name;
 	name << "chunk" << payload->position;
 
-	std::cout << "uploading " << payload->position << std::endl;
+	//std::cout << "uploading " << payload->position << std::endl;
 
 	// clear the buffer cell
 	Chunk* chunk = map->buffer(payload->position);
@@ -176,7 +176,7 @@ void* ChunkUploader::operator() (void* ptr) {
 		h3dReleaseUnusedResources();
 		delete chunk;
 		map->buffer(payload->position) = 0;
-		std::cout << "  cleared" << std::endl;
+		//std::cout << "  cleared" << std::endl;
 	}
 
 	chunk = payload->chunk;
@@ -187,27 +187,27 @@ void* ChunkUploader::operator() (void* ptr) {
 								payload->block->type,
 								name.str().c_str(), 0
 					  		);
-		std::cout << "  creating geometry" << std::endl;
+		//std::cout << "  creating geometry" << std::endl;
 	}
 	else {
 		h3dUnloadResource(chunk->geometry);
-		std::cout << "  unloading geometry" << std::endl;
+		//std::cout << "  unloading geometry" << std::endl;
 	}
 
-	std::cout << "  loading geometry" << std::endl;
+	//std::cout << "  loading geometry" << std::endl;
 	h3dLoadResource(
 		chunk->geometry,
 		payload->block->data,
 		payload->block->size
 	);
 
-	std::cout << "  " << payload->vertices_count << " vertices and "
+	/*std::cout << "  " << payload->vertices_count << " vertices and "
 			  << payload->elements_count << " elements ("
-			  << payload->block->size << " total size)" << std::endl;
+			  << payload->block->size << " total size)" << std::endl;*/
 
 	// create a node if there is no previous one (only the geometry needs to change)
 	if (chunk->node == 0) {
-		std::cout << "  creating node" << std::endl;
+		//std::cout << "  creating node" << std::endl;
 
 		chunk->node = h3dAddModelNode(
 							parent,

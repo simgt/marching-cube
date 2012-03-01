@@ -1,5 +1,9 @@
-* corriger bug lors de l'augmentation de la taille de la geometrie
 * abstraire les données de la map, accès direct depuis marching cube
+* refaire la memoization du marching-cube
+* pouvoir ne stocker QUE les segments modifiés par rapport à la génération procédurale
 * format de stockage endian-independent
+* couper les chunks selon le nombre de polygones
+
+* utiliser une bibliothèque d'algebre lineaire
 
 * OPTIM, TODO

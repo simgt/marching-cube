@@ -52,7 +52,7 @@ void Map::update (const vec3f& camera_position) {
 }
 
 void Map::modify (const vec3i& cp, const vec3f& p, char value) {
-	std::cout << "modifying " << cp << std::endl;
+	//std::cout << "modifying " << cp << std::endl;
 
 	// payload creation
 	Payload* payload = new Payload;
