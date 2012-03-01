@@ -73,7 +73,6 @@ int edit_ray (vec3i& cp, vec3f& p) {
 		if (h3dCastRay(H3DRootNode, p.x, p.y, p.z, d.x, d.y, d.z, 1) > 0) { // cast the ray, stop to the 1st collision
 			H3DNode node;
 			assert(h3dGetCastRayResult(0, &node, 0, (float*)&p)); // recover node and intersection point
-			outlog(node);
 			
 			// OPTIM check if the intersection point is not available directly in model-space in H3D
 			const mat4f* m;
