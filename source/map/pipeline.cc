@@ -4,6 +4,79 @@
 #include <sstream>
 #include <algorithm>
 
+/* -------- *
+ * PIPELINE *
+ * -------- */
+
+/* Payload
+*
+* Structure built and transmitted through the pipeline */
+
+struct Payload {
+	vec3i position;
+	Chunk* chunk;
+	uint vertices_count;
+	uint elements_count;
+	ResourceBlock* block;
+};
+
+/* PayloadAllocator
+ * 
+ * Initialized with a map position
+ * Generate 'Chunk' objects which distance to 'middle' is
+ * less or equal to MAP_VIEW_DISTANCE */
+
+class PayloadAllocator : public tbb::filter {
+public:
+	PayloadAllocator (const Map*);
+	void* operator() (void*);
+	void set_middle (const vec3i& middle);
+private:
+	vec3i middle;
+	vec3i previous;
+	vec3i it;
+	const Map* map;
+};
+
+/* ChunkGenerator
+ * 
+ *  */
+
+class ChunkGenerator : public tbb::filter {
+public:
+	ChunkGenerator ();
+	void* operator() (void*);
+};
+
+/* ChunkTriangulator
+ *
+ * Take a Chunk and generate the vertices / triangles
+ * associated to it in a geometry blob ready to be uploaded
+ * into H3D */
+
+class ChunkTriangulator : public tbb::filter {
+public:
+	ChunkTriangulator ();
+	void* operator() (void* chunk);
+};
+
+/* ChunkUploader
+ *
+ * Create a resource from a chunk geometry raw-data
+ * upload it to H3D (then to OpenGL)
+ * Create the 'model' object associated to the chunk
+ * CAUTION: operator() must be executed in the main thread ! */
+
+class ChunkUploader : public tbb::thread_bound_filter {
+public:
+	ChunkUploader (Map*, const H3DNode);
+	void* operator() (void* chunk);
+private:
+	Map* map;
+	H3DNode parent;
+};
+
+
 /* ChunkAllocator */
 
 PayloadAllocator::PayloadAllocator (const Map* map)
@@ -70,7 +143,7 @@ void PayloadAllocator::set_middle (const vec3i& middle) {
 
 /* ChunkGenerator */
 
-uchar density (const vec3i p) {
+static uchar density (const vec3i p) {
 	//return p.length() - 15;
 	/*int v = p.x * p.x + 17 * p.y - p.z * p.z;
 	return v >= 0 ? 0 : 255;*/

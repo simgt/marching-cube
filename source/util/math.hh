@@ -83,12 +83,22 @@ template <typename T>
 vec3<T> floor (const vec3<T>& v);
 
 template <typename T>
+inline vec3<T> floor (const vec3<T>& v, const T inc) {
+	return floor((vec3<float>)v / (float)inc) * inc;
+}
+
+template <typename T>
 std::ostream& operator<< (std::ostream& out, const vec3<T>& v);
 
 typedef vec3<int> vec3i;
 typedef vec3<float> vec3f;
 typedef vec3<short> vec3s;
 typedef vec3<GLubyte> vec3ub;
+
+template <typename T>
+size_t tbb_hasher(const vec3<T>& key) {
+	return key.x * 256 + key.y * 128 + key.z;
+};
 
 /* =========
  *	 mat4f
