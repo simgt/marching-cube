@@ -70,20 +70,18 @@ struct Chunk {
 	};
 };
 
-typedef tbb::concurrent_hash_map<vec3i, block> block_table;
-typedef std::map<vec3i, Chunk> chunk_table;
-
-class const_volume_sampler {
+template <typename T, typename A, typename R>
+class VolumeSampler {
 public:
-	const_volume_sampler (const block_table& volume)
+	VolumeSampler (T& volume)
 		: volume (volume) {
 	};
 
-	~const_volume_sampler () {
+	~VolumeSampler () {
 		acc.release();
 	}
 
-	const voxel& operator() (vec3i p) {
+	R& operator() (vec3i p) {
 		vec3i b = floor(p, MAP_BLOCK_SIZE) / MAP_BLOCK_SIZE; // block's coordinates
 		
 		if (acc.empty() || b != acc->first) {
@@ -97,7 +95,7 @@ public:
 		return acc->second(p);
 	};
 
-	inline const voxel& operator() (int x, int y, int z) {
+	inline R& operator() (int x, int y, int z) {
 		return operator()(vec3i(x, y, z));
 	};
 
@@ -106,9 +104,17 @@ public:
 	}
 
 private:
-	const block_table& volume;
-	block_table::const_accessor acc;
+	T& volume;
+	A acc;
 };
+
+class block_table : public tbb::concurrent_hash_map<vec3i, block> {
+public:
+	typedef VolumeSampler<block_table, block_table::accessor, voxel> sampler;
+	typedef VolumeSampler<block_table, block_table::const_accessor, const voxel> const_sampler;
+};
+
+typedef std::map<vec3i, Chunk> chunk_table;
 
 struct GeometryPayload {
 	vec3f position;
@@ -121,7 +127,7 @@ class Map {
 public:
 	Map (const H3DNode);
 	void update (const vec3f&);
-	void modify (const vec3i& chunk, const vec3f& position, char value);
+	void modify (const vec3f& position, char value);
 
 	voxel& operator() (const vec3i p);
 	const voxel& operator() (const vec3i p) const;
@@ -145,7 +151,7 @@ private:
  * ALGORITHMS *
  * ---------- */
 
-bool marching_cube (const_volume_sampler& sampler,
+bool marching_cube (block_table::const_sampler& sampler,
 					const vec3i& offset,
 					std::vector<vec3f>& positions,
 					std::vector<vec3f>& normals,

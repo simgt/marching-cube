@@ -60,7 +60,7 @@ void mouse_button_listener (int, int) {
 	
 }
 
-int edit_ray (vec3i& cp, vec3f& p) {
+int edit_ray (vec3f& p) {
 	bool mouse_left = glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
 	bool mouse_right = glfwGetMouseButton(GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
 
@@ -77,10 +77,10 @@ int edit_ray (vec3i& cp, vec3f& p) {
 			// OPTIM check if the intersection point is not available directly in model-space in H3D
 			const mat4f* m;
 			h3dGetNodeTransMats(node, 0, (const float**)&m); // both matrix representation are in column major mode (internal H3D and mat)
-			mat4f inv = mat4f::inverse(*m); // world to model matrix
+			//mat4f inv = mat4f::inverse(*m); // world to model matrix
 			
-			cp = chunk_coord(p);
-			p = inv * p; // inverse the matrix and apply it to the position to recover the model-space position
+			//cp = chunk_coord(p);
+			//p = inv * p; // inverse the matrix and apply it to the position to recover the model-space position
 		}
 		else return 0;
 	} else return 0;
@@ -165,10 +165,9 @@ int main() {
 
 		// inputs
 		// EDIT
-		//vec3i chunk_coord;
-		//vec3f edit_coord;
-		//int v = edit_ray(chunk_coord, edit_coord);
-		//if (v != 0) map->modify(chunk_coord, edit_coord, v * t);
+		vec3f p;
+		int v = edit_ray(p);
+		if (v != 0) map->modify(p, v * t);
 
 		// MOVE
 		if (glfwGetKey('E')) {
