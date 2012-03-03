@@ -20,23 +20,8 @@ extern const int edge_table[256];
 extern const int tri_table[256][16];
 
 #define FLOAT_CMP 0.01
-
-vec3f middle (unsigned char a, unsigned char b) {
-	const vec3f cube[8] = {
-		vec3f(0, 0, 0),
-		vec3f(1, 0, 0),
-		vec3f(1, 0, 1),
-		vec3f(0, 0, 1),
-		vec3f(0, 1, 0),
-		vec3f(1, 1, 0),
-		vec3f(1, 1, 1),
-		vec3f(0, 1, 1)
-	};
-	
-	return (cube[a] + cube[b]) / 2;
-}
-
 #define ISOLEVEL 0
+
 vec3f linear (uchar a, char va, uchar b, char vb) {
 	const vec3f cube[8] = {
 		vec3f(0, 0, 0),
@@ -56,7 +41,7 @@ vec3f linear (uchar a, char va, uchar b, char vb) {
 
 // marching cube
 
-bool marching_cube (block_table::const_sampler& sampler, // input
+bool marching_cube (Volume::ConstSampler& sampler, // input
 					const vec3i& offset,
 					std::vector<vec3f>& positions,
 					std::vector<vec3f>& normals,

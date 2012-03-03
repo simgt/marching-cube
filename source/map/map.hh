@@ -35,26 +35,19 @@
 #define MAP_BUFFER_SIZE_XZ 20
 #define MAP_BUFFER_SIZE_Y  20
 
-class Map;
-
-typedef array3<volatile char,
-			   MAP_CHUNK_SIZE_X,
-			   MAP_CHUNK_SIZE_Y,
-			   MAP_CHUNK_SIZE_Z> chunk_data_array;
-
 /* ----- *
  *  MAP  *
  * ----- */
 
-struct voxel {
+struct Voxel {
 	char density;
 	uchar material;
 };
 
-typedef array3<voxel,
+typedef array3<Voxel,
 			   MAP_BLOCK_SIZE,
 			   MAP_BLOCK_SIZE,
-			   MAP_BLOCK_SIZE> block;
+			   MAP_BLOCK_SIZE> Block;
 
 struct Chunk {
 	H3DNode node;
@@ -82,7 +75,7 @@ public:
 	}
 
 	R& operator() (vec3i p) {
-		vec3i b = floor(p, MAP_BLOCK_SIZE) / MAP_BLOCK_SIZE; // block's coordinates
+		vec3i b = floor(p, MAP_BLOCK_SIZE) / MAP_BLOCK_SIZE; // Block's coordinates
 		
 		if (acc.empty() || b != acc->first) {
 			acc.release();
@@ -91,7 +84,7 @@ public:
 
 		assert(!acc.empty());
 
-		p -= floor(p, MAP_BLOCK_SIZE); // block-relative voxel's coordinates
+		p -= floor(p, MAP_BLOCK_SIZE); // Block-relative Voxel's coordinates
 		return acc->second(p);
 	};
 
@@ -108,13 +101,11 @@ private:
 	A acc;
 };
 
-class block_table : public tbb::concurrent_hash_map<vec3i, block> {
+class Volume : public tbb::concurrent_hash_map<vec3i, Block> {
 public:
-	typedef VolumeSampler<block_table, block_table::accessor, voxel> sampler;
-	typedef VolumeSampler<block_table, block_table::const_accessor, const voxel> const_sampler;
+	typedef VolumeSampler<Volume, Volume::accessor, Voxel> Sampler;
+	typedef VolumeSampler<const Volume, Volume::const_accessor, const Voxel> ConstSampler;
 };
-
-typedef std::map<vec3i, Chunk> chunk_table;
 
 struct GeometryPayload {
 	vec3f position;
@@ -129,15 +120,15 @@ public:
 	void update (const vec3f&);
 	void modify (const vec3f& position, char value);
 
-	voxel& operator() (const vec3i p);
-	const voxel& operator() (const vec3i p) const;
+	Voxel& operator() (const vec3i p);
+	const Voxel& operator() (const vec3i p) const;
 
 private:
 	const H3DNode parent;
 
 	/* volume */
-	block_table volume;
-	chunk_table surface;
+	Volume volume;
+	std::map<vec3i, Chunk> surface;
 
 	/* worker */
 	std::thread worker;
@@ -148,10 +139,17 @@ private:
 };
 
 /* ---------- *
+ *  PIPELINE  *
+ * ---------- */
+
+bool triangulate (GeometryPayload& payload, const Volume& volume, const vec3i& coords);
+void upload (std::map<vec3i, Chunk>& surface, const H3DNode parent, const GeometryPayload& payload);
+
+/* ---------- *
  * ALGORITHMS *
  * ---------- */
 
-bool marching_cube (block_table::const_sampler& sampler,
+bool marching_cube (Volume::ConstSampler& sampler,
 					const vec3i& offset,
 					std::vector<vec3f>& positions,
 					std::vector<vec3f>& normals,
