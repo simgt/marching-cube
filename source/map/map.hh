@@ -8,12 +8,14 @@
 
 #include <tbb/pipeline.h>
 #include <tbb/concurrent_queue.h>
+#include <tbb/concurrent_hash_map.h>
 #include <tbb/compat/thread>
 
 #include <Horde3D/Horde3D.h>
 #include <Horde3DUtils/Horde3DUtils.h>
 
 #include <vector>
+#include <map>
 
 #define MAP_VIEW_DISTANCE 2
 #define MAP_VIEW_AREA (2 * MAP_VIEW_DISTANCE + 1) \
@@ -40,104 +42,80 @@ typedef array3<volatile char,
 			   MAP_CHUNK_SIZE_Y,
 			   MAP_CHUNK_SIZE_Z> chunk_data_array;
 
-struct Chunk {
-	vec3i coord;
-	H3DNode node;
-	H3DRes geometry;
-	H3DNode mesh;
-	H3DRes material;
-	chunk_data_array data;
-
-	Chunk(const vec3i&);
-	void load (const std::string& filepath);
-	void save (const std::string& filepath);
-};
-
-/* -------- *
- * PIPELINE *
- * -------- */
-
-/* Payload
-*
-* Structure built and transmitted through the pipeline */
-
-struct Payload {
-	vec3i position;
-	Chunk* chunk;
-	uint vertices_count;
-	uint elements_count;
-	ResourceBlock* block;
-};
-
-/* PayloadAllocator
- * 
- * Initialized with a map position
- * Generate 'Chunk' objects which distance to 'middle' is
- * less or equal to MAP_VIEW_DISTANCE */
-
-class PayloadAllocator : public tbb::filter {
-public:
-	PayloadAllocator (const Map*);
-	void* operator() (void*);
-	void set_middle (const vec3i& middle);
-private:
-	vec3i middle;
-	vec3i previous;
-	vec3i it;
-	const Map* map;
-};
-
-/* ChunkGenerator
- * 
- *  */
-
-class ChunkGenerator : public tbb::filter {
-public:
-	ChunkGenerator ();
-	void* operator() (void*);
-};
-
-/* ChunkTriangulator
- *
- * Take a Chunk and generate the vertices / triangles
- * associated to it in a geometry blob ready to be uploaded
- * into H3D */
-
-class ChunkTriangulator : public tbb::filter {
-public:
-	ChunkTriangulator ();
-	void* operator() (void* chunk);
-};
-
-/* ChunkUploader
- *
- * Create a resource from a chunk geometry raw-data
- * upload it to H3D (then to OpenGL)
- * Create the 'model' object associated to the chunk
- * CAUTION: operator() must be executed in the main thread ! */
-
-class ChunkUploader : public tbb::thread_bound_filter {
-public:
-	ChunkUploader (Map*, const H3DNode);
-	void* operator() (void* chunk);
-private:
-	Map* map;
-	H3DNode parent;
-};
-
 /* ----- *
  *  MAP  *
  * ----- */
 
-struct Voxel {
+struct voxel {
 	char density;
 	uchar material;
 };
 
-typedef array3<volatile Voxel,
-			   MAP_CHUNK_SIZE_X,
-			   MAP_CHUNK_SIZE_Y,
-			   MAP_CHUNK_SIZE_Z> Block;
+typedef array3<voxel,
+			   MAP_BLOCK_SIZE,
+			   MAP_BLOCK_SIZE,
+			   MAP_BLOCK_SIZE> block;
+
+struct Chunk {
+	H3DNode node;
+	H3DRes geometry;
+	H3DNode mesh;
+	H3DRes material;
+
+	Chunk ()
+		: node (0),
+		  geometry (0),
+		  mesh (0),
+		  material (0) {
+	};
+};
+
+typedef tbb::concurrent_hash_map<vec3i, block> block_table;
+typedef std::map<vec3i, Chunk> chunk_table;
+
+class const_volume_sampler {
+public:
+	const_volume_sampler (const block_table& volume)
+		: volume (volume) {
+	};
+
+	~const_volume_sampler () {
+		acc.release();
+	}
+
+	const voxel& operator() (vec3i p) {
+		vec3i b = floor(p, MAP_BLOCK_SIZE) / MAP_BLOCK_SIZE; // block's coordinates
+		
+		if (acc.empty() || b != acc->first) {
+			acc.release();
+			volume.find(acc, b);
+		}
+
+		assert(!acc.empty());
+
+		p -= floor(p, MAP_BLOCK_SIZE); // block-relative voxel's coordinates
+		return acc->second(p);
+	};
+
+	inline const voxel& operator() (int x, int y, int z) {
+		return operator()(vec3i(x, y, z));
+	};
+
+	void release () {
+		acc.release();
+	}
+
+private:
+	const block_table& volume;
+	block_table::const_accessor acc;
+};
+
+struct GeometryPayload {
+	vec3f position;
+	size_t vertices_count;
+	size_t elements_count;
+	ResourceBlock* resource;
+};
 
 class Map {
 public:
@@ -145,34 +123,30 @@ public:
 	void update (const vec3f&);
 	void modify (const vec3i& chunk, const vec3f& position, char value);
 
+	voxel& operator() (const vec3i p);
+	const voxel& operator() (const vec3i p) const;
+
 private:
-	/* buffer */
-	circular_array3<Chunk*, MAP_BUFFER_SIZE_XZ, MAP_BUFFER_SIZE_Y, MAP_BUFFER_SIZE_XZ> buffer;
-	array3<volatile char, MAP_CHUNK_SIZE * MAP_VIEW_COUNT + 1,
-					  	  MAP_CHUNK_SIZE * MAP_VIEW_COUNT + 1,
-					  	  MAP_CHUNK_SIZE * MAP_VIEW_COUNT + 1> data;
+	const H3DNode parent;
+
+	/* volume */
+	block_table volume;
+	chunk_table surface;
 
 	/* worker */
 	std::thread worker;
-	tbb::concurrent_bounded_queue<vec3i> queue;
+	tbb::concurrent_bounded_queue<vec3i> chunk_queue;
+	tbb::concurrent_queue<GeometryPayload> geometry_queue;
 
-	/* pipeline */
-	PayloadAllocator allocator;
-	ChunkGenerator generator;
-	ChunkTriangulator triangulator;
-	ChunkUploader uploader;
-	tbb::pipeline pipeline;
-
-	friend void worker_task (Map*);
-	friend class PayloadAllocator;
-	friend class ChunkUploader;
+	friend void worker_task (Map* const map);
 };
 
 /* ---------- *
  * ALGORITHMS *
  * ---------- */
 
-void marching_cube (const chunk_data_array& grid,
+bool marching_cube (const_volume_sampler& sampler,
+					const vec3i& offset,
 					std::vector<vec3f>& positions,
 					std::vector<vec3f>& normals,
 					std::vector<uint>& triangles);

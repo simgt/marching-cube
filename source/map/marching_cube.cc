@@ -56,7 +56,8 @@ vec3f linear (uchar a, char va, uchar b, char vb) {
 
 // marching cube
 
-void marching_cube (const chunk_data_array& grid, // input
+bool marching_cube (const_volume_sampler& sampler, // input
+					const vec3i& offset,
 					std::vector<vec3f>& positions,
 					std::vector<vec3f>& normals,
 					std::vector<uint>& triangles) { // output
@@ -78,22 +79,22 @@ void marching_cube (const chunk_data_array& grid, // input
 	uint disc = 0; // discarded triangles
 
 	// X-AXIS
-	for (int i = 0; i < MAP_CHUNK_SIZE_X - 1; i++) {
+	for (int i = 0; i < MAP_CHUNK_SIZE; i++) {
 
 		// Y-AXIS
-		for (int j = 0; j < MAP_CHUNK_SIZE_Y - 1; j++) {
+		for (int j = 0; j < MAP_CHUNK_SIZE; j++) {
 
 			// Z-AXIS
-			for (int k = 0; k < MAP_CHUNK_SIZE_Z - 1; k++) {
+			for (int k = 0; k < MAP_CHUNK_SIZE; k++) {
 				char val[8] = { // fetch the value of the eight vertices of the cube
-					grid(i    , j    , k    ),
-					grid(i + 1, j    , k    ),
-					grid(i + 1, j    , k + 1),
-					grid(i    , j    , k + 1),
-					grid(i    , j + 1, k    ),
-					grid(i + 1, j + 1, k    ),
-					grid(i + 1, j + 1, k + 1),
-					grid(i    , j + 1, k + 1) 
+					sampler(offset + vec3i(i    , j    , k    )).density,
+					sampler(offset + vec3i(i + 1, j    , k    )).density,
+					sampler(offset + vec3i(i + 1, j    , k + 1)).density,
+					sampler(offset + vec3i(i    , j    , k + 1)).density,
+					sampler(offset + vec3i(i    , j + 1, k    )).density,
+					sampler(offset + vec3i(i + 1, j + 1, k    )).density,
+					sampler(offset + vec3i(i + 1, j + 1, k + 1)).density,
+					sampler(offset + vec3i(i    , j + 1, k + 1)).density 
 				};
 				
 				// get the index representing the cube's vertices configuration
@@ -186,6 +187,8 @@ void marching_cube (const chunk_data_array& grid, // input
 	//std::cout << positions.size() << " vertices and " << triangles.size() / 3 << " triangles generated (" << disc << " discarded)"<< std::endl;
 	
 	assert(positions.size() == normals.size());
+
+	return (positions.size() != 0 && triangles.size() != 0);
 }
 
 /* ==================== *

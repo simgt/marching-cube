@@ -56,7 +56,7 @@ void mouse_position_listener (int mx, int my) {
 	camera.orientation.y = - fmod(CAMERA_R_SPEED * mx, 360); // rotation autour de l'axe y (donc horizontale)
 }
 
-void mouse_button_listener (int button, int status) {
+void mouse_button_listener (int, int) {
 	
 }
 
@@ -165,10 +165,10 @@ int main() {
 
 		// inputs
 		// EDIT
-		vec3i chunk_coord;
-		vec3f edit_coord;
-		int v = edit_ray(chunk_coord, edit_coord);
-		if (v != 0) map->modify(chunk_coord, edit_coord, v * t);
+		//vec3i chunk_coord;
+		//vec3f edit_coord;
+		//int v = edit_ray(chunk_coord, edit_coord);
+		//if (v != 0) map->modify(chunk_coord, edit_coord, v * t);
 
 		// MOVE
 		if (glfwGetKey('E')) {

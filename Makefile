@@ -1,5 +1,5 @@
 CC = g++-mp-4.6
-#CC = clang++ -std=c++0x
+#CC = clang++-mp-3.0
 CFLAGS = -W -Wall -O0 -std=c++0x \
 		-DTBB_IMPLEMENT_CPP0X=1 \
 		-Isource -I/opt/local/include -I/usr/local/include \
@@ -9,7 +9,7 @@ LDFLAGS = -lglfw -ltbb \
 
 BIN = build/sculpt
 SRC = main.cc util/h3d.cc \
-	  map/map.cc map/chunk.cc map/pipeline.cc map/marching_cube.cc
+	  map/map.cc map/marching_cube.cc
 
 ## compile ##
 
