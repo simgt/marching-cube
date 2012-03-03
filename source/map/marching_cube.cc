@@ -56,7 +56,7 @@ vec3f linear (uchar a, char va, uchar b, char vb) {
 
 // marching cube
 
-bool marching_cube (const_volume_sampler& sampler, // input
+bool marching_cube (block_table::const_sampler& sampler, // input
 					const vec3i& offset,
 					std::vector<vec3f>& positions,
 					std::vector<vec3f>& normals,

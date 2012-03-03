@@ -62,7 +62,7 @@ void worker_task (Map* const map) {
 		std::vector<uint> elements;
 
 		// run marching cube algorithm
-		const_volume_sampler sampler (map->volume);
+		block_table::const_sampler sampler (map->volume);
 		marching_cube(sampler, p * MAP_CHUNK_SIZE, positions, normals, elements);
 		sampler.release();
 
@@ -176,24 +176,19 @@ void Map::update (const vec3f& cp) {
 	}
 }
 
-void Map::modify (const vec3i& cp, const vec3f& p, char value) {
-	//std::cout << "modifying " << cp << std::endl;
-
-	// payload creation
-	/*Payload* payload = new Payload;
-	payload->position = cp;
-	payload->chunk = buffer(cp);
-
+void Map::modify (const vec3f& p, char value) {
+	//std::cout << "modifying " << p << std::endl;
 	// chunks modifications
-	chunk_data_array* data = &buffer(cp)->data;
 	vec3i pp = floor(p);
-	
-	for (int i = std::max(0, pp.x - 1); i <= std::min(MAP_CHUNK_SIZE_X - 1, pp.x + 1); i++)
-		for (int j = std::max(0, pp.y - 1); j <= std::min(MAP_CHUNK_SIZE_Y - 1, pp.y + 1); j++)
-			for (int k = std::max(0, pp.z - 1); k <= std::min(MAP_CHUNK_SIZE_Z - 1, pp.z + 1); k++)
-				data->at(i, j, k) = std::max(-128, std::min(127, data->at(i, j, k) + value));
 
-	// running partial pipeline on chunk
-	triangulator(payload);
-	uploader(payload);*/
+	block_table::sampler sampler (volume);
+
+	for (int i = pp.x - 1; i <= pp.x + 1; i++)
+		for (int j = pp.y - 1; j <= pp.y + 1; j++)
+			for (int k = pp.z - 1; k <= pp.z + 1; k++)
+				sampler(i, j, k).density = std::max(-128, std::min(127, sampler(i, j, k).density + value));
+
+	sampler.release();
+
+	chunk_queue.push(floor(p, (float)MAP_CHUNK_SIZE) / MAP_CHUNK_SIZE);
 }
