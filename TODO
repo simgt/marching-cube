@@ -1,6 +1,6 @@
-* abstraire les données de la map, accès direct depuis marching cube
-
-== feature freeze ==
+* enqueue unique
+* file de priorité
+* ajouter le "dirty flag" aux blocs
 * passage à Eigen
 
 
