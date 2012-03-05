@@ -30,6 +30,10 @@ typedef unsigned char uchar;
 
 #include <Eigen/Dense>
 
+#ifndef M_PI
+#define M_PI 3.141592653589793
+#endif
+
 typedef Eigen::Vector3f Vec3f;
 typedef Eigen::Vector3i Vec3i;
 typedef Eigen::Matrix<short, 3, 1> Vec3s;
