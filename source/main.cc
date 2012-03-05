@@ -1,5 +1,5 @@
 #include <global.hh>
-#include <util/math.hh>
+
 #include <map/map.hh>
 #include <map/util.hh>
 
@@ -27,13 +27,11 @@ Map* map = 0;
 
 struct {
 	H3DNode node;
-	vec3f position;
-	vec3f orientation;
-} camera = {0, vec3f(0, 8, 0), vec3f(0)};
+	Vec3f position;
+	Vec3f orientation;
+} camera = {0, Vec3f(0, 8, 0), Vec3f(0, 0, 0)};
 
 // events
-
-tbb::concurrent_bounded_queue<vec3i> chunks_queue;
 
 void keyboard_listener (int key, int state) {
 	if (state == GLFW_RELEASE)
@@ -52,31 +50,32 @@ void keyboard_listener (int key, int state) {
 }
 
 void mouse_position_listener (int mx, int my) {
-	camera.orientation.x = - CAMERA_R_SPEED * my; // rotation autour de l'axe x (donc verticale)
-	camera.orientation.y = - fmod(CAMERA_R_SPEED * mx, 360); // rotation autour de l'axe y (donc horizontale)
+	camera.orientation[0] = - CAMERA_R_SPEED * my; // rotation autour de l'axe x (donc verticale)
+	camera.orientation[1] = - fmod(CAMERA_R_SPEED * mx, 360); // rotation autour de l'axe y (donc horizontale)
 }
 
 void mouse_button_listener (int, int) {
 	
 }
 
-int edit_ray (vec3f& p) {
+int edit_ray (Vec3f& p) {
 	bool mouse_left = glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
 	bool mouse_right = glfwGetMouseButton(GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
 
 	if ((mouse_left && !mouse_right) || (!mouse_left && mouse_right)) {
-		vec3f d; // position and direction of the picking ray
+		Vec3f d; // position and direction of the picking ray
 		
-		h3dutPickRay(camera.node, 0.5, 0.5, &p.x, &p.y, &p.z, &d.x, &d.y, &d.z); // get the picking ray of the center of the screen
-		d.length(PICK_RAY_LENGTH); // set ray length to maximum reachable by player
-		
-		if (h3dCastRay(H3DRootNode, p.x, p.y, p.z, d.x, d.y, d.z, 1) > 0) { // cast the ray, stop to the 1st collision
+		h3dutPickRay(camera.node, 0.5, 0.5, &p[0], &p[1], &p[2], &d[0], &d[1], &d[2]); // get the picking ray of the center of the screen
+		d.normalize(); // set ray length to maximum reachable by player
+		d *= PICK_RAY_LENGTH;
+
+		if (h3dCastRay(H3DRootNode, p[0], p[1], p[2], d[0], d[1], d[2], 1) > 0) { // cast the ray, stop to the 1st collision
 			H3DNode node;
-			assert(h3dGetCastRayResult(0, &node, 0, (float*)&p)); // recover node and intersection point
+			h3dGetCastRayResult(0, &node, 0, (float*)&p); // recover node and intersection point
 			
 			// OPTIM check if the intersection point is not available directly in model-space in H3D
-			const mat4f* m;
-			h3dGetNodeTransMats(node, 0, (const float**)&m); // both matrix representation are in column major mode (internal H3D and mat)
+			//const mat4f* m;
+			//h3dGetNodeTransMats(node, 0, (const float**)&m); // both matrix representation are in column major mode (internal H3D and mat)
 			//mat4f inv = mat4f::inverse(*m); // world to model matrix
 			
 			//cp = chunk_coord(p);
@@ -165,38 +164,38 @@ int main() {
 
 		// inputs
 		// EDIT
-		vec3f p;
+		Vec3f p;
 		int v = edit_ray(p);
 		if (v != 0) map->modify(p, v * t);
 
 		// MOVE
 		if (glfwGetKey('E')) {
-			h3dSetNodeTransform(light, camera.position.x, camera.position.y, camera.position.z, camera.orientation.x, camera.orientation.y, camera.orientation.z, 1, 1, 1);
+			h3dSetNodeTransform(light, camera.position[0], camera.position[1], camera.position[2], camera.orientation[0], camera.orientation[1], camera.orientation[2], 1, 1, 1);
 		}
 
 		if (glfwGetKey('W')) { // forward
-			camera.position.x += -sinf(radian(camera.orientation.y)) * cosf(-radian(camera.orientation.x)) * CAMERA_T_SPEED * t;
-			camera.position.y += -sinf(-radian(camera.orientation.x)) * CAMERA_T_SPEED * t;
-			camera.position.z += -cosf(radian(camera.orientation.y)) * cosf(-radian(camera.orientation.x)) * CAMERA_T_SPEED * t;
+			camera.position[0] += -sinf(radian(camera.orientation[1])) * cosf(-radian(camera.orientation[0])) * CAMERA_T_SPEED * t;
+			camera.position[1] += -sinf(-radian(camera.orientation[0])) * CAMERA_T_SPEED * t;
+			camera.position[2] += -cosf(radian(camera.orientation[1])) * cosf(-radian(camera.orientation[0])) * CAMERA_T_SPEED * t;
 		}
 
 		if (glfwGetKey('S')) { // backward
-			camera.position.x += sinf(radian(camera.orientation.y)) * cosf(-radian(camera.orientation.x)) * CAMERA_T_SPEED * t;
-			camera.position.y += sinf(-radian(camera.orientation.x)) * CAMERA_T_SPEED * t;
-			camera.position.z += cosf(radian(camera.orientation.y)) * cosf(-radian(camera.orientation.x)) * CAMERA_T_SPEED * t;
+			camera.position[0] += sinf(radian(camera.orientation[1])) * cosf(-radian(camera.orientation[0])) * CAMERA_T_SPEED * t;
+			camera.position[1] += sinf(-radian(camera.orientation[0])) * CAMERA_T_SPEED * t;
+			camera.position[2] += cosf(radian(camera.orientation[1])) * cosf(-radian(camera.orientation[0])) * CAMERA_T_SPEED * t;
 		}
 
 		if (glfwGetKey('A')) { // left
-			camera.position.x += -sinf(radian(camera.orientation.y + 90)) * CAMERA_T_SPEED * t;
-			camera.position.z += -cosf(radian(camera.orientation.y + 90)) * CAMERA_T_SPEED * t;
+			camera.position[0] += -sinf(radian(camera.orientation[1] + 90)) * CAMERA_T_SPEED * t;
+			camera.position[2] += -cosf(radian(camera.orientation[1] + 90)) * CAMERA_T_SPEED * t;
 		}
 
 		if (glfwGetKey('D')) { // right
-			camera.position.x += sinf(radian(camera.orientation.y + 90)) * CAMERA_T_SPEED * t;
-			camera.position.z += cosf(radian(camera.orientation.y + 90)) * CAMERA_T_SPEED * t;
+			camera.position[0] += sinf(radian(camera.orientation[1] + 90)) * CAMERA_T_SPEED * t;
+			camera.position[2] += cosf(radian(camera.orientation[1] + 90)) * CAMERA_T_SPEED * t;
 		}
 		
-		h3dSetNodeTransform(camera.node, camera.position.x, camera.position.y, camera.position.z, camera.orientation.x, camera.orientation.y, 0, 1, 1, 1);
+		h3dSetNodeTransform(camera.node, camera.position[0], camera.position[1], camera.position[2], camera.orientation[0], camera.orientation[1], 0, 1, 1, 1);
 
 	    // Render scene
 	    h3dRender(camera.node);

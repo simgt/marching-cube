@@ -20,4 +20,20 @@ typedef unsigned int uint32;
 typedef unsigned short ushort;
 typedef unsigned char uchar;
 
+// MATHS
+
+#include <Eigen/Dense>
+
+typedef Eigen::Vector3f Vec3f;
+typedef Eigen::Vector3i Vec3i;
+typedef Eigen::Matrix<short, 3, 1> Vec3s;
+
+inline Vec3i floor (const Vec3f& v) {
+	return Vec3i(floor(v[0]), floor(v[1]), floor(v[2]));
+}
+
+inline Vec3i floor (const Vec3f& v, const int inc) {
+	return floor(v / (float)inc) * inc;
+}
+
 #endif
