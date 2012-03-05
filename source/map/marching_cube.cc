@@ -22,16 +22,16 @@ extern const int tri_table[256][16];
 #define FLOAT_CMP 0.01
 #define ISOLEVEL 0
 
-vec3f linear (uchar a, char va, uchar b, char vb) {
-	const vec3f cube[8] = {
-		vec3f(0, 0, 0),
-		vec3f(1, 0, 0),
-		vec3f(1, 0, 1),
-		vec3f(0, 0, 1),
-		vec3f(0, 1, 0),
-		vec3f(1, 1, 0),
-		vec3f(1, 1, 1),
-		vec3f(0, 1, 1)
+Vec3f linear (uchar a, char va, uchar b, char vb) {
+	const Vec3f cube[8] = {
+		Vec3f(0, 0, 0),
+		Vec3f(1, 0, 0),
+		Vec3f(1, 0, 1),
+		Vec3f(0, 0, 1),
+		Vec3f(0, 1, 0),
+		Vec3f(1, 1, 0),
+		Vec3f(1, 1, 1),
+		Vec3f(0, 1, 1)
 	};
 	
 	assert(a != b);
@@ -42,9 +42,9 @@ vec3f linear (uchar a, char va, uchar b, char vb) {
 // marching cube
 
 bool marching_cube (Volume::ConstSampler& sampler, // input
-					const vec3i& offset,
-					std::vector<vec3f>& positions,
-					std::vector<vec3f>& normals,
+					const Vec3i& offset,
+					std::vector<Vec3f>& positions,
+					std::vector<Vec3f>& normals,
 					std::vector<uint>& triangles) { // output
 	const uchar edg[12][2] = {
 		/*  0 */ {0, 1},
@@ -72,14 +72,14 @@ bool marching_cube (Volume::ConstSampler& sampler, // input
 			// Z-AXIS
 			for (int k = 0; k < MAP_CHUNK_SIZE; k++) {
 				char val[8] = { // fetch the value of the eight vertices of the cube
-					sampler(offset + vec3i(i    , j    , k    )).density,
-					sampler(offset + vec3i(i + 1, j    , k    )).density,
-					sampler(offset + vec3i(i + 1, j    , k + 1)).density,
-					sampler(offset + vec3i(i    , j    , k + 1)).density,
-					sampler(offset + vec3i(i    , j + 1, k    )).density,
-					sampler(offset + vec3i(i + 1, j + 1, k    )).density,
-					sampler(offset + vec3i(i + 1, j + 1, k + 1)).density,
-					sampler(offset + vec3i(i    , j + 1, k + 1)).density 
+					sampler(offset + Vec3i(i    , j    , k    )).density,
+					sampler(offset + Vec3i(i + 1, j    , k    )).density,
+					sampler(offset + Vec3i(i + 1, j    , k + 1)).density,
+					sampler(offset + Vec3i(i    , j    , k + 1)).density,
+					sampler(offset + Vec3i(i    , j + 1, k    )).density,
+					sampler(offset + Vec3i(i + 1, j + 1, k    )).density,
+					sampler(offset + Vec3i(i + 1, j + 1, k + 1)).density,
+					sampler(offset + Vec3i(i    , j + 1, k + 1)).density 
 				};
 				
 				// get the index representing the cube's vertices configuration
@@ -108,7 +108,7 @@ bool marching_cube (Volume::ConstSampler& sampler, // input
 				};
 
 				// get the origin corner of the cube
-				vec3f origin (i, j, k);
+				Vec3f origin (i, j, k);
 
 				// TRIANGLES loop
 				for (int n = 0; tri_table[index][n] != -1; n += 3) {
@@ -122,11 +122,13 @@ bool marching_cube (Volume::ConstSampler& sampler, // input
 						// check if the vertex has already been created
 						// create it and save it to the register if not
 						if (memo_cube[e] == -1) { // not memoized
-							vec3f position = origin + linear(edg[e][0], val[edg[e][0]], edg[e][1], val[edg[e][1]]); //middle(edg[e][0], edg[e][1]);
+							Vec3f position = origin + linear(edg[e][0], val[edg[e][0]], edg[e][1], val[edg[e][1]]); //middle(edg[e][0], edg[e][1]);
 							
 							// check if the interpolation has not already produced a vertex at this position
 							for (uint i = 0; i < positions.size(); i++)
-								if ((position >= (positions[i] - FLOAT_CMP)) && (position <= (positions[i] + FLOAT_CMP))) {
+								//if ((*((vec3f*)&position) >= (*((vec3f*)&positions[i]) - FLOAT_CMP)) && (*((vec3f*)&position) <= (*((vec3f*)&positions[i]) + FLOAT_CMP))) {
+								// TODO check the Vec3f comparison
+								if (position == positions[i]) {
 									memo_cube[e] = i;
 									break;
 								}
@@ -135,7 +137,7 @@ bool marching_cube (Volume::ConstSampler& sampler, // input
 								// construct the triangle's vertex and save it to the cube register
 								memo_cube[e] = positions.size();
 								positions.push_back(position);
-								normals.push_back(0);
+								normals.push_back(Vec3f::Zero());
 								//normals.push_back(vec3s(rand() % 255, rand() % 255, rand() % 255));
 							}
 						}
@@ -156,7 +158,7 @@ bool marching_cube (Volume::ConstSampler& sampler, // input
 					triangles.push_back(v[2]);
 					
 					// face normal computing and adding to the vertices
-					vec3f fn = cross(positions[v[1]] - positions[v[0]], positions[v[2]] - positions[v[0]]); // compute the triangle's normal
+					Vec3f fn = (positions[v[1]] - positions[v[0]]).cross(positions[v[2]] - positions[v[0]]); // compute the triangle's normal
 					fn.normalize();
 					for (int m = 0; m < 3; m++)
 						normals[v[m]] += fn;
@@ -167,7 +169,7 @@ bool marching_cube (Volume::ConstSampler& sampler, // input
 	
 	// set normals length to 1.0
 	for (uint i = 0; i < normals.size(); i++)
-		if (normals[i] != vec3f(0)) normals[i].normalize(); // TODO
+		if (normals[i] != Vec3f::Zero()) normals[i].normalize(); // TODO
 	
 	//std::cout << positions.size() << " vertices and " << triangles.size() / 3 << " triangles generated (" << disc << " discarded)"<< std::endl;
 	

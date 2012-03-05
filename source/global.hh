@@ -20,6 +20,12 @@ typedef unsigned int uint32;
 typedef unsigned short ushort;
 typedef unsigned char uchar;
 
+// LIBRARIES
+
+#include <glfw.h>
+#include <Horde3D/Horde3D.h>
+#include <Horde3DUtils/Horde3DUtils.h>
+
 // MATHS
 
 #include <Eigen/Dense>
@@ -34,6 +40,22 @@ inline Vec3i floor (const Vec3f& v) {
 
 inline Vec3i floor (const Vec3f& v, const int inc) {
 	return floor(v / (float)inc) * inc;
+}
+
+inline Vec3i floor (const Vec3i& v, const int inc) {
+	return Vec3i(floor(v[0] / (float)inc) * inc,
+				 floor(v[1] / (float)inc) * inc,
+				 floor(v[2] / (float)inc) * inc);
+}
+
+inline float radian (float t) {
+	return  t * 2.0f * M_PI / 360.0f;
+}
+
+inline Vec3f cartesian (float theta_deg, float phi_deg, float r) {
+	float theta = radian(theta_deg), phi = radian(phi_deg);
+	float sin_theta = sin(theta);
+	return Vec3f(r * sin_theta * cos(phi), r * cos(theta), r * sin_theta * sin(phi));
 }
 
 #endif
