@@ -117,8 +117,8 @@ struct GeometryPayload {
 class Map {
 public:
 	Map (const H3DNode);
-	void update (const vec3f&);
-	void modify (const vec3f& position, char value);
+	void update (const Vec3f&);
+	void modify (const Vec3f& position, char value);
 
 	Voxel& operator() (const vec3i p);
 	const Voxel& operator() (const vec3i p) const;
