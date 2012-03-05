@@ -1,11 +1,6 @@
 #include <global.hh>
 
 #include <map/map.hh>
-#include <map/util.hh>
-
-#include <glfw.h>
-#include <Horde3D/Horde3D.h>
-#include <Horde3DUtils/Horde3DUtils.h>
 
 #include <string>
 

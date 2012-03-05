@@ -2,7 +2,6 @@
 #define MAP_HH
 
 #include <global.hh>
-#include <util/math.hh>
 #include <util/h3d.hh>
 #include <util/algorithm.hh>
 
@@ -74,8 +73,8 @@ public:
 		acc.release();
 	}
 
-	R& operator() (vec3i p) {
-		vec3i b = floor(p, MAP_BLOCK_SIZE) / MAP_BLOCK_SIZE; // Block's coordinates
+	R& operator() (Vec3i p) {
+		Vec3i b = floor(p, MAP_BLOCK_SIZE) / MAP_BLOCK_SIZE; // Block's coordinates
 		
 		if (acc.empty() || b != acc->first) {
 			acc.release();
@@ -89,7 +88,7 @@ public:
 	};
 
 	inline R& operator() (int x, int y, int z) {
-		return operator()(vec3i(x, y, z));
+		return operator()(Vec3i(x, y, z));
 	};
 
 	void release () {
@@ -101,14 +100,35 @@ private:
 	A acc;
 };
 
-class Volume : public tbb::concurrent_hash_map<vec3i, Block> {
+struct Vec3iCompare {
+	static size_t hash (const Vec3i& a) {
+		return a[0] * 256 + a[1] * 128 + a[2];
+	};
+
+	static bool equal (const Vec3i& a, const Vec3i& b) {
+		return a == b;
+	};
+
+	bool operator() (const Vec3i& a, const Vec3i& b) {
+		return a[0] < b[0] ? true
+			 : a[0] > b[0] ? false
+			 : a[1] < b[1] ? true
+			 : a[1] > b[1] ? false
+			 : a[2] < b[2] ? true
+			 : false;
+	};
+};
+
+class Volume : public tbb::concurrent_hash_map<Vec3i, Block, Vec3iCompare> {
 public:
 	typedef VolumeSampler<Volume, Volume::accessor, Voxel> Sampler;
 	typedef VolumeSampler<const Volume, Volume::const_accessor, const Voxel> ConstSampler;
 };
 
+typedef std::map<Vec3i, Chunk, Vec3iCompare> Surface;
+
 struct GeometryPayload {
-	vec3f position;
+	Vec3i position; // TODO Vec3i ?
 	size_t vertices_count;
 	size_t elements_count;
 	ResourceBlock* resource;
@@ -120,19 +140,16 @@ public:
 	void update (const Vec3f&);
 	void modify (const Vec3f& position, char value);
 
-	Voxel& operator() (const vec3i p);
-	const Voxel& operator() (const vec3i p) const;
-
 private:
 	const H3DNode parent;
 
 	/* volume */
 	Volume volume;
-	std::map<vec3i, Chunk> surface;
+	Surface surface;
 
 	/* worker */
 	std::thread worker;
-	tbb::concurrent_bounded_queue<vec3i> chunk_queue;
+	tbb::concurrent_bounded_queue<Vec3i> chunk_queue;
 	tbb::concurrent_queue<GeometryPayload> geometry_queue;
 
 	friend void worker_task (Map* const map);
@@ -142,17 +159,18 @@ private:
  *  PIPELINE  *
  * ---------- */
 
-bool triangulate (GeometryPayload& payload, const Volume& volume, const vec3i& coords);
-void upload (std::map<vec3i, Chunk>& surface, const H3DNode parent, const GeometryPayload& payload);
+void generate (Block& block, const Vec3i coords);
+bool triangulate (GeometryPayload& payload, const Volume& volume, const Vec3i& coords);
+void upload (Surface& surface, const H3DNode parent, const GeometryPayload& payload);
 
 /* ---------- *
  * ALGORITHMS *
  * ---------- */
 
 bool marching_cube (Volume::ConstSampler& sampler,
-					const vec3i& offset,
-					std::vector<vec3f>& positions,
-					std::vector<vec3f>& normals,
+					const Vec3i& offset,
+					std::vector<Vec3f>& positions,
+					std::vector<Vec3f>& normals,
 					std::vector<uint>& triangles);
 
 #endif

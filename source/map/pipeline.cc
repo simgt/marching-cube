@@ -2,6 +2,19 @@
 
 #include <sstream>
 
+
+static uchar density (const Vec3i p) {
+	return p[1] <= 5 ? 127 : -128;
+}
+
+void generate (Block& block, const Vec3i coords) {
+	// procedural generation
+	for (Vec3i k (0, 0, 0); k[0] < MAP_BLOCK_SIZE; k[0]++)  		//x axis
+		for (k[1] = 0; k[1] < MAP_BLOCK_SIZE; k[1]++)		//y axis
+			for (k[2] = 0; k[2] < MAP_BLOCK_SIZE; k[2]++) 	//z axis
+				block(k).density = density(coords * MAP_BLOCK_SIZE + k);
+}
+
 /* Triangulator
  *
  * Triangulate the volume associated to 'sampler': generate vertices
@@ -12,9 +25,9 @@
  * 'offset' coordinates of the MAP_CHUNK_SIZE square to triangulate
  */
 
-bool triangulate (GeometryPayload& payload, const Volume& volume, const vec3i& coords) {
-	std::vector<vec3f> positions;
-	std::vector<vec3f> normals;
+bool triangulate (GeometryPayload& payload, const Volume& volume, const Vec3i& coords) {
+	std::vector<Vec3f> positions;
+	std::vector<Vec3f> normals;
 	std::vector<uint> elements;
 
 	// run marching cube algorithm
@@ -24,9 +37,9 @@ bool triangulate (GeometryPayload& payload, const Volume& volume, const vec3i& c
 
 	if (positions.size() == 0 || elements.size() == 0) return false;
 
-	std::vector<vec3s> normals_short (normals.size());
+	std::vector<Vec3s> normals_short (normals.size());
 	for (uint i = 0; i < normals.size(); i++)
-		normals_short[i] = normals[i] * 32767;
+		normals_short[i] = (normals[i] * 32767).cast<short>();
 
 	payload.position = coords;
 	payload.vertices_count = positions.size();
@@ -47,7 +60,7 @@ bool triangulate (GeometryPayload& payload, const Volume& volume, const vec3i& c
  *
  * CAUTION: must be executed in the main thread ! */
 
-void upload (std::map<vec3i, Chunk>& surface, const H3DNode parent, const GeometryPayload& payload) {
+void upload (Surface& surface, const H3DNode parent, const GeometryPayload& payload) {
 	Chunk& chunk = surface[payload.position];
 
 	std::stringstream name;
@@ -78,9 +91,9 @@ void upload (std::map<vec3i, Chunk>& surface, const H3DNode parent, const Geomet
 	
 		h3dSetNodeTransform(
 				chunk.node,
-				payload.position.x * MAP_CHUNK_SIZE,
-				payload.position.y * MAP_CHUNK_SIZE,
-				payload.position.z * MAP_CHUNK_SIZE,
+				payload.position[0] * MAP_CHUNK_SIZE,
+				payload.position[1] * MAP_CHUNK_SIZE,
+				payload.position[2] * MAP_CHUNK_SIZE,
 				0, 0, 0, 1, 1, 1
 			);
 

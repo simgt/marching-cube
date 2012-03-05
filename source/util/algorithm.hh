@@ -1,6 +1,7 @@
 #ifndef ALGORITHM_HH
 #define ALGORITHM_HH
 
+#include <global.hh>
 #include <array>
 
 template <typename T, size_t X, size_t Y, size_t Z>
@@ -14,12 +15,12 @@ public:
 		return std::array<T, X * Y * Z>::operator[](x * Y * Z + y * Z + z);
 	};
 
-	typename std::array<T, X * Y * Z>::reference operator() (const vec3i p) {
-		return std::array<T, X * Y * Z>::operator[](p.x * Y * Z + p.y * Z + p.z);
+	typename std::array<T, X * Y * Z>::reference operator() (const Vec3i p) {
+		return operator()(p[0], p[1], p[2]);
 	};
 	
-	typename std::array<T, X * Y * Z>::const_reference operator() (const vec3i p) const {
-		return std::array<T, X * Y * Z>::operator[](p.x * Y * Z + p.y * Z + p.z);
+	typename std::array<T, X * Y * Z>::const_reference operator() (const Vec3i p) const {
+		return operator()(p[0], p[1], p[2]);
 	};
 
 	typename std::array<T, X * Y * Z>::reference at (size_t x, size_t y, size_t z) {
@@ -28,14 +29,6 @@ public:
 	
 	typename std::array<T, X * Y * Z>::const_reference at (size_t x, size_t y, size_t z) const {
 		return operator()(x, y, z);
-	};
-
-	typename std::array<T, X * Y * Z>::reference at (const vec3i p) {
-		return operator()(p);
-	};
-	
-	typename std::array<T, X * Y * Z>::const_reference at (const vec3i p) const {
-		return operator()(p);
 	};
 };
 
@@ -54,14 +47,6 @@ public:
 		y = y >= 0 ? y % Y : (Y - (-y % Y)) % Y;
 		z = z >= 0 ? z % Z : (Z - (-z % Z)) % Z;
 		return array3<T, X, Y, Z>::operator()(x, y, z);
-	};
-
-	typename array3<T, X, Y, Z>::reference operator() (const vec3i p) {
-		return operator()(p.x, p.y, p.z);
-	};
-	
-	typename array3<T, X, Y, Z>::const_reference operator() (const vec3i p) const {
-		return operator()(p.x, p.y, p.z);
 	};
 };
 
