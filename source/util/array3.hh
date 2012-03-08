@@ -1,7 +1,7 @@
 #ifndef ALGORITHM_HH
 #define ALGORITHM_HH
 
-#include <global.hh>
+#include <Eigen/Dense>
 #include <array>
 
 template <typename T, size_t X, size_t Y, size_t Z>
@@ -32,7 +32,7 @@ public:
 	};
 };
 
-template <typename T, size_t X, size_t Y, size_t Z>
+/*template <typename T, size_t X, size_t Y, size_t Z>
 class circular_array3 : public array3<T, X, Y, Z> {
 public:
 	typename array3<T, X, Y, Z>::reference operator() (int x, int y, int z) {
@@ -48,6 +48,6 @@ public:
 		z = z >= 0 ? z % Z : (Z - (-z % Z)) % Z;
 		return array3<T, X, Y, Z>::operator()(x, y, z);
 	};
-};
+};*/
 
 #endif

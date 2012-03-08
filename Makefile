@@ -1,6 +1,6 @@
 CC = g++-mp-4.6
 #CC = clang++-mp-3.0
-CFLAGS = -W -Wall -O4 -std=c++0x \
+CFLAGS = -W -Wall -O3 -std=c++0x \
 		-DTBB_IMPLEMENT_CPP0X=1 \
 		-Isource -I/opt/local/include -I/usr/local/include \
 		$(addprefix -I, /Library/Frameworks/Horde3D.framework/Headers /Library/Frameworks/Horde3DUtils.framework/Headers)
@@ -36,3 +36,6 @@ clean:
 
 check: all
 	./$(BIN)
+
+stat:
+	find source -name '*.[ch]*' | xargs wc -l
