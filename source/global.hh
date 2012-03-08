@@ -62,4 +62,26 @@ inline Vec3f cartesian (float theta_deg, float phi_deg, float r) {
 	return Vec3f(r * sin_theta * cos(phi), r * cos(theta), r * sin_theta * sin(phi));
 }
 
+struct Vec3iCompare {
+	static size_t hash (const Vec3i& a) {
+		return a[0] * 256 + a[1] * 128 + a[2];
+	};
+
+	static bool equal (const Vec3i& a, const Vec3i& b) {
+		return a == b;
+	};
+
+	/* less operator */
+	bool operator() (const Vec3i& a, const Vec3i& b) {
+		return a[0] < b[0] ? true
+			 : a[0] > b[0] ? false
+			 : a[1] < b[1] ? true
+			 : a[1] > b[1] ? false
+			 : a[2] < b[2] ? true
+			 : false;
+	};
+};
+
+
+
 #endif

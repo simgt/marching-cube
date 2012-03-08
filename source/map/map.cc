@@ -1,7 +1,4 @@
 #include "map.hh"
-#include <util/algorithm.hh>
-
-#include <tbb/pipeline.h>
 
 #include <iostream>
 #include <sstream>
