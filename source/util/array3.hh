@@ -1,5 +1,5 @@
-#ifndef ALGORITHM_HH
-#define ALGORITHM_HH
+#ifndef ARRAY3_HH
+#define ARRAY3_HH
 
 #include <Eigen/Dense>
 #include <array>
