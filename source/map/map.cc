@@ -17,7 +17,8 @@ Map::Map (const H3DNode parent)
 void worker_task (Map* const map) {
 	while (true) { // TODO replace true by a lock wait ?
 		Vec3i p; // chunk to process
-		map->chunk_queue.pop(p); // TODO replace by try_pop of a priority_queue
+		if (!map->chunk_queue.try_pop(p)) // TODO replace by try_pop of a priority_queue
+			continue;
 
 		// VOLUME
 		/* compute the involved volume Blocks and
@@ -67,12 +68,15 @@ void Map::modify (const Vec3f& p, char value) {
 
 	Volume::Sampler sampler (volume);
 
-	for (int i = pp[0] - 1; i <= pp[0] + 1; i++)
-		for (int j = pp[1] - 1; j <= pp[1] + 1; j++)
-			for (int k = pp[2] - 1; k <= pp[2] + 1; k++)
-				sampler(i, j, k).density = std::max(-128, std::min(127, sampler(i, j, k).density + value));
+	Vec3i it;
+	for (it[0] = pp[0] - 1; it[0] <= pp[0] + 1; it[0]++)
+		for (it[1] = pp[1] - 1; it[1] <= pp[1] + 1; it[1]++)
+			for (it[2] = pp[2] - 1; it[2] <= pp[2] + 1; it[2]++) {
+				sampler(it).density = std::max(-128, std::min(127, sampler(it).density + value));
+				chunk_queue.push(floor(it, MAP_CHUNK_SIZE) / MAP_CHUNK_SIZE);
+			}
 
 	sampler.release();
 
-	chunk_queue.push(floor(p, MAP_CHUNK_SIZE) / MAP_CHUNK_SIZE);
+	//chunk_queue.push(floor(p, MAP_CHUNK_SIZE) / MAP_CHUNK_SIZE);
 }

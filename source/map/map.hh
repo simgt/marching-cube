@@ -4,6 +4,7 @@
 #include <global.hh>
 
 #include <util/h3d.hh>
+#include <util/concurrent_unique_queue.hh>
 
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_hash_map.h>
@@ -34,7 +35,8 @@ private:
 
 	/* worker */
 	std::thread worker;
-	tbb::concurrent_bounded_queue<Vec3i> chunk_queue;
+	ConcurrentUniqueQueue<Vec3i> chunk_queue;
+	//tbb::concurrent_bounded_queue<Vec3i> chunk_queue;
 	tbb::concurrent_queue<GeometryPayload> geometry_queue;
 
 	friend void worker_task (Map* const map);
@@ -47,10 +49,6 @@ private:
 void generate (Block& block, const Vec3i coords);
 bool triangulate (GeometryPayload& payload, const Volume& volume, const Vec3i& coords);
 void upload (Surface& surface, const H3DNode parent, const GeometryPayload& payload);
-
-/* ---------- *
- * ALGORITHMS *
- * ---------- */
 
 bool marching_cube (Volume::ConstSampler& sampler,
 					const Vec3i& offset,
