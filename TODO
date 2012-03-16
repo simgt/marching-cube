@@ -1,10 +1,11 @@
+* phong shading
+* shadow map
 * commentaires et séparation en fichiers (global.hh et map.hh)
-* enqueue unique
-* file de priorité
+* file de priorité?
 
 * refaire la memoization du marching-cube
-* pouvoir ne stocker QUE les segments modifiés par rapport à la génération procédurale
+* pouvoir ne stocker QUE les segments (Block) modifiés par rapport à la génération procédurale
 * format de stockage endian-independent
-* couper les chunks selon le nombre de polygones
+* couper les chunks selon le nombre de polygones ?
 
 * OPTIM, TODO

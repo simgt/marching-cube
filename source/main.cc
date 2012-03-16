@@ -79,8 +79,8 @@ int edit_ray (Vec3f& p) {
 		else return 0;
 	} else return 0;
 
-	return mouse_left ? 200
-		 : mouse_right ? -200
+	return mouse_left ? 300
+		 : mouse_right ? -300
 		 : 0;
 }
 
@@ -122,11 +122,11 @@ int main() {
 
 
 	// Add light source
-	H3DNode light = h3dAddLightNode(H3DRootNode, "Light1", 0, "LIGHTING", "SHADOWMAP");
+	H3DNode light = h3dAddLightNode(H3DRootNode, "Light1", 0, "LIGHTING", 0);
 	h3dSetNodeTransform(light, 0, 6, 10, -10, 0, 0, 1, 1, 1);
 	h3dSetNodeParamF(light, H3DLight::ColorF3, 0, 1.0f );
-	h3dSetNodeParamF(light, H3DLight::ColorF3, 1, 0.8f );
-	h3dSetNodeParamF(light, H3DLight::ColorF3, 2, 0.7f );
+	h3dSetNodeParamF(light, H3DLight::ColorF3, 1, 1.0f );
+	h3dSetNodeParamF(light, H3DLight::ColorF3, 2, 1.0f );
 	h3dSetNodeParamF(light, H3DLight::ColorMultiplierF, 0, 1.0f );
 
 	// Add camera
