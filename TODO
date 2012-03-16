@@ -1,5 +1,7 @@
 * phong shading
+* correction normales en bordure de Chunks
 * shadow map
+* lumières sans spots
 * commentaires et séparation en fichiers (global.hh et map.hh)
 * file de priorité?
 
