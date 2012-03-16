@@ -1,0 +1,18 @@
+<Pipeline>
+    <CommandQueue>
+        <Stage id="Ambient" link="pipelines/globalSettings.material.xml">
+			<ClearTarget depthBuf="true" colBuf0="true" />
+			
+			<DrawGeometry context="AMBIENT" class="~Translucent" />
+		</Stage>
+		
+		<Stage id="Lighting">
+			<!--<ClearTarget depthBuf="true" colBuf0="true" />-->
+			<DoForwardLightLoop class="~Translucent" />
+		</Stage>
+		
+		<!--<Stage id="Translucent">
+			<DrawGeometry context="TRANSLUCENT" class="Translucent" order="BACK_TO_FRONT" />
+		</Stage>-->
+    </CommandQueue>
+</Pipeline>
